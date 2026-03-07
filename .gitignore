@@ -1,1 +1,37 @@
 .history
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Firebase credentials
+backend/firebase-service-account.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+
+# Prisma generated
+backend/prisma/migrations/
+
+# Vite cache
+frontend/.vite/

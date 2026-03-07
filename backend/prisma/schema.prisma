@@ -1,0 +1,66 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RoleName {
+  ADMIN
+  USER
+}
+
+model User {
+  id           String     @id
+  email        String     @unique
+  display_name String
+  status       UserStatus @default(ACTIVE)
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+
+  user_roles UserRole[]
+  posts      Post[]
+
+  @@index([status])
+}
+
+model Role {
+  id   Int      @id @default(autoincrement())
+  name RoleName @unique
+
+  user_roles UserRole[]
+}
+
+model UserRole {
+  user_id String
+  role_id Int
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [role_id], references: [id])
+
+  @@id([user_id, role_id])
+  @@index([user_id])
+}
+
+model Post {
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String   @db.Text
+  author_id  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  author User? @relation(fields: [author_id], references: [id], onDelete: SetNull)
+
+  @@index([author_id])
+  @@index([created_at(sort: Desc)])
+}
