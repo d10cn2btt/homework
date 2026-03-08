@@ -13,12 +13,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Request logger
-app.use((req, _res, next) => {
-  logger.info({ method: req.method, url: req.url }, 'Incoming request');
-  next();
-});
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/me', profileRoutes);
