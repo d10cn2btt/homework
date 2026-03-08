@@ -1,0 +1,409 @@
+{
+  "info": {
+    "name": "Homework API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Full API collection for Homework project (Firebase Auth + RBAC)"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "firebaseApiKey",
+      "value": "AIzaSyDsqA600AyIhPdYTs8s6U-3NK8Ok9pTUcE",
+      "type": "string"
+    },
+    {
+      "key": "firebaseToken",
+      "value": "",
+      "type": "string",
+      "description": "Tự động điền sau khi chạy 'Firebase Login' (xem Tests tab)"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string",
+      "description": "Tự động điền sau khi chạy 'Firebase Login' (xem Tests tab)"
+    },
+    {
+      "key": "postId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Firebase",
+      "item": [
+        {
+          "name": "Firebase Login (lay token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.idToken) {",
+                  "  pm.collectionVariables.set('firebaseToken', res.idToken);",
+                  "  pm.collectionVariables.set('userId', res.localId);",
+                  "  console.log('Token va userId da duoc luu vao collection variables');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\",\n  \"returnSecureToken\": true\n}"
+            },
+            "url": {
+              "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{firebaseApiKey}}",
+              "protocol": "https",
+              "host": ["identitytoolkit", "googleapis", "com"],
+              "path": ["v1", "accounts:signInWithPassword"],
+              "query": [{ "key": "key", "value": "{{firebaseApiKey}}" }]
+            },
+            "description": "Đăng nhập Firebase để lấy idToken. Script trong tab Tests tự động lưu 'firebaseToken' và 'userId' vào collection variables."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sync User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "sync"]
+            },
+            "description": "Đồng bộ user Firebase vào DB. Trả về 201 nếu tạo mới, 200 nếu đã tồn tại."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile (Me)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "me"]
+            },
+            "description": "Lấy thông tin profile của user hiện tại kèm roles."
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Nguyen Van A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "me"]
+            },
+            "description": "Cập nhật display_name của user hiện tại. Tối đa 100 ký tự."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (ADMIN only)",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Lấy danh sách tất cả users (phân trang). Yêu cầu role ADMIN."
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"display_name\": \"New User\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Tạo user mới trên Firebase và DB. Yêu cầu role ADMIN. Password tối thiểu 6 ký tự."
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Lấy thông tin chi tiết của một user theo Firebase UID. Yêu cầu role ADMIN."
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Updated Name\",\n  \"status\": \"INACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Cập nhật display_name hoặc status của user. status chỉ nhận 'ACTIVE' hoặc 'INACTIVE'. Không thể deactivate ADMIN cuối cùng. Yêu cầu role ADMIN."
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Xóa user khỏi Firebase và DB. Không thể xóa ADMIN cuối cùng. Yêu cầu role ADMIN."
+          }
+        },
+        {
+          "name": "Assign Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "role"]
+            },
+            "description": "Gán role cho user. role chỉ nhận 'ADMIN' hoặc 'USER'. Không thể demote ADMIN cuối cùng. Yêu cầu role ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "List Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts?page=1&limit=10&search=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "search", "value": "", "description": "Tìm kiếm theo title (không phân biệt hoa thường)" }
+              ]
+            },
+            "description": "Lấy danh sách posts (phân trang). limit tối đa 50. Hỗ trợ tìm kiếm theo title."
+          }
+        },
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bai viet dau tien\",\n  \"content\": \"Day la noi dung bai viet dau tien cua toi.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts"]
+            },
+            "description": "Tạo post mới. title tối đa 255 ký tự. content không được rỗng."
+          }
+        },
+        {
+          "name": "Get Post By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/{{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "{{postId}}"]
+            },
+            "description": "Lấy chi tiết một post theo ID (integer)."
+          }
+        },
+        {
+          "name": "Update Post",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tieu de da cap nhat\",\n  \"content\": \"Noi dung da duoc chinh sua lai.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/{{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "{{postId}}"]
+            },
+            "description": "Cập nhật post. Chỉ tác giả hoặc ADMIN mới được sửa. Có thể gửi một trong hai field hoặc cả hai."
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/{{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "{{postId}}"]
+            },
+            "description": "Xóa post. Chỉ tác giả hoặc ADMIN mới được xóa."
+          }
+        }
+      ]
+    }
+  ]
+}

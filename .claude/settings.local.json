@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch --all --prune)",
+      "Bash(grep -E 'refs/heads/[0-9]+-user-mgmt-acl$')",
+      "Bash(grep -E '^[* ]*[0-9]+-user-mgmt-acl$')",
+      "Bash(powershell.exe -File \".specify/scripts/powershell/create-new-feature.ps1\" -Json -Number 1 -ShortName \"user-mgmt-acl\" \"CRUD web application with user management, role-based access control \\(ACL\\), and Firebase Authentication email/password login\")",
+      "Bash(powershell.exe -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -PathsOnly)",
+      "Bash(powershell.exe -File \".specify/scripts/powershell/setup-plan.ps1\" -Json)",
+      "Bash(powershell.exe -File \".specify/scripts/powershell/update-agent-context.ps1\" -AgentType claude)",
+      "Bash(powershell.exe -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json)",
+      "Bash(powershell.exe -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)",
+      "Bash(node -e \":*)",
+      "Bash(npx prisma migrate dev --name init)",
+      "Bash(node prisma/seed.js)",
+      "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -PathsOnly)",
+      "Bash(powershell -File \".specify/scripts/powershell/create-new-feature.ps1\" -Json \"Bên admin đang bị thiếu màn tạo user\" -Number 1 -ShortName \"admin-create-user\")",
+      "Bash(powershell -Command \"ls specs/\")",
+      "Bash(powershell -Command \"New-Item -ItemType Directory -Force -Path ''D:\\\\SAP\\\\reborn\\\\homework\\\\specs\\\\001-admin-create-user\\\\checklists'' | Out-Null; Write-Output ''done''\")",
+      "Bash(powershell -File \".specify/scripts/powershell/setup-plan.ps1\" -Json)",
+      "Bash(powershell -Command \"New-Item -ItemType Directory -Force -Path ''D:\\\\SAP\\\\reborn\\\\homework\\\\specs\\\\001-admin-create-user\\\\contracts'' | Out-Null; Write-Output ''done''\")",
+      "Bash(powershell -File \".specify/scripts/powershell/update-agent-context.ps1\" -AgentType claude)",
+      "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json)",
+      "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)"
+    ]
+  }
+}
