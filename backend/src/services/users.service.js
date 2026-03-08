@@ -51,8 +51,10 @@ async function updateProfile(uid, { display_name }) {
 }
 
 async function listUsers({ page = 1, limit = 10 }) {
+  page = parseInt(page, 10);
+  limit = parseInt(limit, 10);
   const skip = (page - 1) * limit;
-  const [total, users] = await prisma.$transaction([
+  const [total, users] = await Promise.all([
     prisma.user.count(),
     prisma.user.findMany({
       orderBy: { created_at: 'desc' },
