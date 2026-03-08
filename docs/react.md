@@ -262,20 +262,139 @@ const { currentUser, isAdmin } = useAuth(); // dùng ở bất kỳ đâu
 
 ## Kỹ thuật 4: Custom Hook — đóng gói logic tái sử dụng
 
-Hook là hàm bắt đầu bằng `use`. Custom hook giúp gộp logic lại thành 1 chỗ.
+### Tại sao Hook phải bắt đầu bằng `use`?
+
+Đây là **quy định bắt buộc của React** — không phải convention tùy thích.
+
+React cần phân biệt đâu là Hook, đâu là function thường — vì Hook có **quy tắc đặc biệt** mà function thường không có. React nhận diện dựa vào **tên hàm**:
+
+```js
+// React biết đây là Hook → áp dụng quy tắc Hook
+function useAuth() { ... }
+function useState() { ... }
+function useEffect() { ... }
+
+// React biết đây là function thường → không áp dụng quy tắc Hook
+function getUser() { ... }
+function formatDate() { ... }
+```
+
+### Rules of Hooks — 2 quy tắc cứng
+
+Hooks có **2 quy tắc** mà function thường không bị ràng buộc:
+
+```js
+// ✅ ĐÚNG — Hook phải gọi ở top level, luôn chạy, không có điều kiện
+function MyComponent() {
+  const [count, setCount] = useState(0);
+  const { user } = useAuth();
+}
+
+// ❌ SAI — Hook không được gọi bên trong if/loop/function con
+function MyComponent() {
+  if (isLoggedIn) {
+    const [count, setCount] = useState(0); // BUG: không được gọi có điều kiện
+  }
+}
+```
+
+> **Lý do:** React tracking thứ tự gọi Hook để quản lý state.
+> Nếu gọi có điều kiện, thứ tự thay đổi → React bị lẫn lộn state giữa các lần render → bug khó tìm.
+
+### ESLint tự động cảnh báo nhờ vào tên `use`
+
+`eslint-plugin-react-hooks` chỉ kiểm tra được Rules of Hooks khi tên bắt đầu bằng `use`:
+
+```js
+function useAuth() {
+  if (condition) {
+    useEffect(...); // ← ESLint báo lỗi ngay: "Hook called conditionally" ✅
+  }
+}
+
+function getAuth() {
+  if (condition) {
+    useEffect(...); // ← ESLint KHÔNG báo lỗi vì không nhận ra đây là Hook
+  }               //   → Bug âm thầm, khó debug 🐛
+}
+```
+
+> Nếu đặt tên `getAuth()` thay vì `useAuth()`, code vẫn chạy — nhưng **mất hết cảnh báo**, lỗi sẽ âm thầm xuất hiện.
+
+### Lợi ích thực tế: tái sử dụng logic
+
+Custom hook giúp **gom logic có state/side-effect vào 1 chỗ**:
+
+```js
+// ❌ Không có custom hook — lặp code ở mọi component
+function PostsPage() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api.get('/posts')
+      .then(res => setPosts(res.data))
+      .catch(err => setError(err))
+      .finally(() => setLoading(false));
+  }, []);
+  // ...
+}
+
+function DashboardPage() {
+  // lại viết y chang 15 dòng trên... 😩
+}
+```
+
+```js
+// ✅ Có custom hook — viết 1 lần, dùng ở bất kỳ đâu
+function usePosts() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api.get('/posts')
+      .then(res => setPosts(res.data))
+      .catch(err => setError(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { posts, loading, error };
+}
+
+// Dùng ở bất kỳ đâu, gọn gàng
+function PostsPage() {
+  const { posts, loading, error } = usePosts(); // 1 dòng thay vì 15 dòng ✅
+}
+function DashboardPage() {
+  const { posts } = usePosts(); // tái sử dụng ngay ✅
+}
+```
+
+**Trong dự án — `useAuth()` làm đúng việc này:**
 
 ```js
 // Thay vì mỗi component viết:
 const context = useContext(AuthContext);
 
-// Tạo custom hook 1 lần:
+// Tạo custom hook 1 lần trong AuthContext.jsx:
 export function useAuth() {
   return useContext(AuthContext);
 }
 
-// Dùng ở mọi nơi:
-const { currentUser, isAdmin } = useAuth();
+// Dùng ở mọi nơi (NavBar, ProtectedRoute, AdminRoute, ProfilePage...):
+const { currentUser, isAdmin, signOut } = useAuth();
 ```
+
+### Tóm tắt
+
+| | Giải thích |
+|---|---|
+| **Tại sao phải `use`?** | React dùng tên để nhận diện Hook và enforce Rules of Hooks |
+| **ESLint dùng tên** | `eslint-plugin-react-hooks` chỉ cảnh báo đúng nếu tên bắt đầu `use` |
+| **Nếu không đặt `use`** | Code vẫn chạy, nhưng mất hết cảnh báo → bug âm thầm, khó debug |
+| **Lợi ích custom hook** | Gom logic có state/effect vào 1 chỗ, tái sử dụng nhiều nơi |
 
 ---
 
