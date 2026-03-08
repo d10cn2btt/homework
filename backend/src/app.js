@@ -18,6 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/me', profileRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/users', usersRoutes);
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Global error handler
 app.use((err, req, res, next) => {
