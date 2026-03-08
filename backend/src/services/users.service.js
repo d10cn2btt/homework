@@ -74,10 +74,16 @@ async function listUsers({ page = 1, limit = 10 }) {
 }
 
 async function createUser(adminSdk, { email, display_name, password }) {
+  const resolvedDisplayName = display_name?.trim() || email.split('@')[0];
+
   // Create in Firebase first
   let firebaseUser;
   try {
-    firebaseUser = await adminSdk.auth().createUser({ email, password, displayName: display_name });
+    firebaseUser = await adminSdk.auth().createUser({
+      email,
+      password,
+      displayName: resolvedDisplayName,
+    });
   } catch (err) {
     if (err.code === 'auth/email-already-exists') {
       throw new ConflictError('Email đã tồn tại');
@@ -88,22 +94,27 @@ async function createUser(adminSdk, { email, display_name, password }) {
   // Check if already in DB (e.g. created via sync)
   const existing = await prisma.user.findUnique({ where: { id: firebaseUser.uid } });
   if (existing) {
+    await adminSdk.auth().deleteUser(firebaseUser.uid);
     throw new ConflictError('Email đã tồn tại');
   }
 
-  const userRole = await prisma.role.findUnique({ where: { name: 'USER' } });
-  const user = await prisma.user.create({
-    data: {
-      id: firebaseUser.uid,
-      email,
-      display_name,
-      status: 'ACTIVE',
-      user_roles: { create: { role_id: userRole.id } },
-    },
-  });
-
-  const roles = await getUserRoles(user.id);
-  return { ...user, roles };
+  try {
+    const userRole = await prisma.role.findUnique({ where: { name: 'USER' } });
+    const user = await prisma.user.create({
+      data: {
+        id: firebaseUser.uid,
+        email,
+        display_name: resolvedDisplayName,
+        status: 'ACTIVE',
+        user_roles: { create: { role_id: userRole.id } },
+      },
+    });
+    const roles = await getUserRoles(user.id);
+    return { ...user, roles };
+  } catch (err) {
+    await adminSdk.auth().deleteUser(firebaseUser.uid);
+    throw err;
+  }
 }
 
 async function getUserById(uid) {

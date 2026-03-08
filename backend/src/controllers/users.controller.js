@@ -15,8 +15,8 @@ async function listUsers(req, res, next) {
 async function createUser(req, res, next) {
   try {
     const { email, display_name, password } = req.body;
-    if (!email || !display_name || !password) {
-      return res.status(400).json({ message: 'email, display_name và password là bắt buộc' });
+    if (!email || !password) {
+      return res.status(400).json({ message: 'email và password là bắt buộc' });
     }
     if (password.length < 6) {
       return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự' });
