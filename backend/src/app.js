@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const logger = require('./utils/logger');
 
 const authRoutes = require('./routes/auth.routes');
 const profileRoutes = require('./routes/profile.routes');
@@ -12,6 +13,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Request logger
+app.use((req, _res, next) => {
+  logger.info({ method: req.method, url: req.url }, 'Incoming request');
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/me', profileRoutes);
@@ -21,8 +28,12 @@ app.use('/api/users', usersRoutes);
 // Global error handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
-  const message =
-    statusCode === 500 ? 'Lỗi máy chủ nội bộ' : err.message;
+  if (statusCode === 500) {
+    logger.error({ err, method: req.method, url: req.url }, 'Unhandled server error');
+  } else {
+    logger.warn({ statusCode, message: err.message, method: req.method, url: req.url }, 'Request error');
+  }
+  const message = statusCode === 500 ? 'Lỗi máy chủ nội bộ' : err.message;
   res.status(statusCode).json({ message });
 });
 
