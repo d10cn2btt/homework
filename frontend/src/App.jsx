@@ -9,6 +9,7 @@ import PostDetailPage from './pages/PostDetailPage';
 import PostFormPage from './pages/PostFormPage';
 import ProfilePage from './pages/ProfilePage';
 import UsersPage from './pages/UsersPage';
+import UserCreatePage from './pages/UserCreatePage';
 import UserDetailPage from './pages/UserDetailPage';
 import ErrorPage from './pages/ErrorPage';
 
@@ -109,6 +110,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <AdminRoute>
                 <UsersPage />
+              </AdminRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users/new"
+          element={
+            <ProtectedRoute>
+              <AdminRoute>
+                <UserCreatePage />
               </AdminRoute>
             </ProtectedRoute>
           }

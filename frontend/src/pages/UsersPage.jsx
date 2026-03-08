@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -10,8 +10,17 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const LIMIT = 10;
+
+  useEffect(() => {
+    if (location.state?.toast) {
+      setToast(location.state.toast);
+      window.history.replaceState({}, '', location.pathname);
+    }
+  }, [location]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -45,6 +54,10 @@ export default function UsersPage() {
           + Thêm người dùng
         </button>
       </div>
+
+      {toast && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-sm">{toast}</div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">{error}</div>
