@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id              // Firebase UID
+  email       String    @unique
+  displayName String?   @map("display_name")
+  status      UserStatus @default(active)
+  createdAt   DateTime  @default(now())  @map("created_at")
+
+  userRole    UserRole?
+  posts       Post[]
+
+  @@map("users")
+}
+
+model Role {
+  id        Int        @id @default(autoincrement())
+  name      RoleName   @unique
+
+  userRoles UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId  String  @id    @map("user_id")  // 1 user = 1 role
+  roleId  Int            @map("role_id")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role    Role    @relation(fields: [roleId], references: [id])
+
+  @@map("user_roles")
+}
+
+model Post {
+  id        Int        @id @default(autoincrement())
+  userId    String     @map("user_id")
+  title     String
+  content   String?
+  status    PostStatus @default(draft)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt      @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("posts")
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum RoleName {
+  ADMIN
+  USER
+}
+
+enum PostStatus {
+  draft
+  published
+}
