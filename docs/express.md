@@ -52,7 +52,7 @@ app.js
     └─ app.use(errorHandler)          → global error handler ở cuối
     │
     ▼
-app.listen(3000)  → Server sẵn sàng nhận request
+app.listen(3000)  → Server sẵn sàng nhận  request
 
 ─────── Mỗi khi có request đến ───────────────────────────────
     │
