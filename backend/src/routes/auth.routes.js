@@ -4,6 +4,8 @@ const { syncUser } = require('../controllers/auth.controller');
 
 const router = Router();
 
-router.post('/sync', authMiddleware, syncUser);
+const authenticated = [authMiddleware];
+
+router.post('/sync', ...authenticated, syncUser);
 
 module.exports = router;

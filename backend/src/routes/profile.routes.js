@@ -5,7 +5,9 @@ const { getMe, updateMe } = require('../controllers/profile.controller');
 
 const router = Router();
 
-router.get('/', authMiddleware, requireRole(), getMe);
-router.put('/', authMiddleware, requireRole(), updateMe);
+const authenticated = [authMiddleware, requireRole()];
+
+router.get('/', ...authenticated, getMe);
+router.put('/', ...authenticated, updateMe);
 
 module.exports = router;
