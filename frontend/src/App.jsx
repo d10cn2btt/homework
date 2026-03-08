@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
@@ -21,22 +21,42 @@ function NavBar() {
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-6">
-        <Link to="/dashboard" className="font-semibold text-gray-800 hover:text-blue-600">
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            isActive ? 'font-semibold text-blue-600' : 'font-semibold text-gray-800 hover:text-blue-600'
+          }
+        >
           Dashboard
-        </Link>
-        <Link to="/posts" className="text-gray-600 hover:text-blue-600">
+        </NavLink>
+        <NavLink
+          to="/posts"
+          className={({ isActive }) =>
+            isActive ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-blue-600'
+          }
+        >
           Bài viết
-        </Link>
+        </NavLink>
         {isAdmin && (
-          <Link to="/admin/users" className="text-gray-600 hover:text-blue-600">
+          <NavLink
+            to="/admin/users"
+            className={({ isActive }) =>
+              isActive ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-blue-600'
+            }
+          >
             Quản lý người dùng
-          </Link>
+          </NavLink>
         )}
       </div>
       <div className="flex items-center gap-3">
-        <Link to="/profile" className="text-sm text-gray-600 hover:text-blue-600">
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            isActive ? 'text-sm text-blue-600 font-medium' : 'text-sm text-gray-600 hover:text-blue-600'
+          }
+        >
           {currentUser.display_name}
-        </Link>
+        </NavLink>
         <button
           onClick={signOut}
           className="text-sm text-red-600 hover:text-red-700"

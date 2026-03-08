@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 function getErrorMessage(code) {
   switch (code) {
@@ -19,11 +20,15 @@ function getErrorMessage(code) {
 }
 
 export default function LoginPage() {
+  const { currentUser, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  if (authLoading) return null;
+  if (currentUser) return <Navigate to="/dashboard" replace />;
 
   async function handleSubmit(e) {
     e.preventDefault();
