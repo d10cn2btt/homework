@@ -20,7 +20,7 @@ async function handleChatMessage(ws, uid, frame, registry) {
 
   const savedMessage = await chatService.saveMessage(uid, roomId, content);
   const memberUids = await chatService.getRoomMembers(roomId);
-  const outbound = JSON.stringify({ type: 'message', ...savedMessage });
+  const outbound = JSON.stringify({ ...savedMessage, type: 'message' });
 
   memberUids.forEach((memberUid) => {
     registry.get(memberUid)?.forEach((sock) => sock.send(outbound));

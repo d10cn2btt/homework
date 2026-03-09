@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function RoomList({ rooms, selectedRoomId, onSelect, onCreate }) {
+export default function RoomList({ rooms, selectedRoomId, onSelect, onCreate, onJoin }) {
   const [showInput, setShowInput] = useState(false);
   const [newName, setNewName] = useState('');
 
@@ -45,12 +45,27 @@ export default function RoomList({ rooms, selectedRoomId, onSelect, onCreate }) 
         {rooms.map((room) => (
           <li
             key={room.id}
-            onClick={() => onSelect(room.id)}
-            className={`px-4 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 ${
-              room.id === selectedRoomId ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-            }`}
+            onClick={() => room.isMember && onSelect(room.id)}
+            className={`px-4 py-3 border-b border-gray-100 ${
+              room.isMember ? 'cursor-pointer hover:bg-gray-50' : 'opacity-60'
+            } ${room.id === selectedRoomId ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}
           >
-            <p className="font-medium text-sm text-gray-800">{room.name}</p>
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="font-medium text-sm text-gray-800 truncate">{room.name}</p>
+                {room.isOwner && (
+                  <span className="text-xs text-blue-500 shrink-0">owner</span>
+                )}
+              </div>
+              {!room.isMember && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onJoin(room.id); }}
+                  className="text-xs bg-blue-600 text-white rounded px-2 py-0.5 shrink-0 hover:bg-blue-700"
+                >
+                  Join
+                </button>
+              )}
+            </div>
             {room.lastMessage && (
               <p className="text-xs text-gray-500 truncate mt-0.5">{room.lastMessage.content}</p>
             )}

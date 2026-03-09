@@ -27,7 +27,7 @@ export function useWebSocket() {
       ws.onmessage = (event) => {
         try {
           const frame = JSON.parse(event.data);
-          if (frame.type === 'message') {
+          if (frame.type === 'message' || frame.type === 'system') {
             setMessages((prev) => [...prev, frame]);
           }
         } catch {
