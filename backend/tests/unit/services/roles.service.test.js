@@ -1,20 +1,17 @@
-jest.mock('../../../src/config/db');
-jest.mock('../../../src/config/redis');
-jest.mock('../../../src/utils/logger', () => ({ info: jest.fn() }));
-
-const prisma = require('../../../src/config/db');
-const redis = require('../../../src/config/redis');
-const logger = require('../../../src/utils/logger');
-
-// Mock cache.service to use mocked redis
-jest.mock('../../../src/services/cache.service', () => ({
+jest.mock('../../../src/config/db.js');
+jest.mock('../../../src/config/redis.js');
+jest.mock('../../../src/utils/logger.js', () => ({ info: jest.fn() }));
+jest.mock('../../../src/services/cache.service.js', () => ({
   delRoles: jest.fn().mockResolvedValue(undefined),
   getRoles: jest.fn().mockResolvedValue(null),
   setRoles: jest.fn().mockResolvedValue(undefined),
 }));
 
-const { delRoles } = require('../../../src/services/cache.service');
-const { assignRole } = require('../../../src/services/roles.service');
+import prisma from '../../../src/config/db.js';
+import redis from '../../../src/config/redis.js';
+import logger from '../../../src/utils/logger.js';
+import { delRoles } from '../../../src/services/cache.service.js';
+import { assignRole } from '../../../src/services/roles.service.js';
 
 function setupPrismaMocks({ oldRoleName = 'USER', adminCount = 2 } = {}) {
   prisma.userRole = {

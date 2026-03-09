@@ -1,7 +1,7 @@
-const { Router } = require('express');
-const authMiddleware = require('../middlewares/auth.mdw');
-const requireRole = require('../middlewares/acl.mdw');
-const ctrl = require('../controllers/users.controller');
+import { Router } from 'express';
+import authMiddleware from '../middlewares/auth.mdw.js';
+import requireRole from '../middlewares/acl.mdw.js';
+import * as ctrl from '../controllers/users.controller.js';
 
 const router = Router();
 
@@ -14,4 +14,4 @@ router.put('/:id', ...adminOnly, ctrl.updateUser);
 router.delete('/:id', ...adminOnly, ctrl.deleteUser);
 router.patch('/:id/role', ...adminOnly, ctrl.assignRole);
 
-module.exports = router;
+export default router;

@@ -1,6 +1,6 @@
-const admin = require('../config/firebase');
-const usersService = require('../services/users.service');
-const rolesService = require('../services/roles.service');
+import admin from '../config/firebase.js';
+import * as usersService from '../services/users.service.js';
+import * as rolesService from '../services/roles.service.js';
 
 async function listUsers(req, res, next) {
   try {
@@ -69,4 +69,4 @@ async function assignRole(req, res, next) {
   }
 }
 
-module.exports = { listUsers, createUser, getUserById, updateUser, deleteUser, assignRole };
+export { listUsers, createUser, getUserById, updateUser, deleteUser, assignRole };

@@ -1,4 +1,4 @@
-const { findOrCreateUser } = require('../services/users.service');
+import { findOrCreateUser } from '../services/users.service.js';
 
 async function syncUser(req, res, next) {
   try {
@@ -18,4 +18,4 @@ async function syncUser(req, res, next) {
   }
 }
 
-module.exports = { syncUser };
+export { syncUser };

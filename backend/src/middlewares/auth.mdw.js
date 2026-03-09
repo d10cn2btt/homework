@@ -1,5 +1,5 @@
-const admin = require('../config/firebase');
-const prisma = require('../config/db');
+import admin from '../config/firebase.js';
+import prisma from '../config/db.js';
 
 async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -32,4 +32,4 @@ async function authMiddleware(req, res, next) {
   next();
 }
 
-module.exports = authMiddleware;
+export default authMiddleware;

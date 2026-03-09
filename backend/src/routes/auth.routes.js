@@ -1,6 +1,6 @@
-const { Router } = require('express');
-const authMiddleware = require('../middlewares/auth.mdw');
-const { syncUser } = require('../controllers/auth.controller');
+import { Router } from 'express';
+import authMiddleware from '../middlewares/auth.mdw.js';
+import { syncUser } from '../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -8,4 +8,4 @@ const authenticated = [authMiddleware];
 
 router.post('/sync', ...authenticated, syncUser);
 
-module.exports = router;
+export default router;

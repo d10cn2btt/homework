@@ -1,8 +1,8 @@
-const prisma = require('../config/db');
-const { delRoles } = require('./cache.service');
-const { getUserRoles } = require('./users.service');
-const logger = require('../utils/logger');
-const { ValidationError } = require('../utils/errors');
+import prisma from '../config/db.js';
+import { delRoles } from './cache.service.js';
+import { getUserRoles } from './users.service.js';
+import logger from '../utils/logger.js';
+import { ValidationError } from '../utils/errors.js';
 
 async function countAdmins() {
   const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
@@ -47,4 +47,4 @@ async function assignRole(actorUid, targetUid, newRoleName) {
   return { id: targetUid, roles: updatedRoles, updated_at: new Date() };
 }
 
-module.exports = { assignRole };
+export { assignRole };
