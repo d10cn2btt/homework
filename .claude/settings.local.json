@@ -21,7 +21,9 @@
       "Bash(powershell -Command \"New-Item -ItemType Directory -Force -Path ''D:\\\\SAP\\\\reborn\\\\homework\\\\specs\\\\001-admin-create-user\\\\contracts'' | Out-Null; Write-Output ''done''\")",
       "Bash(powershell -File \".specify/scripts/powershell/update-agent-context.ps1\" -AgentType claude)",
       "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json)",
-      "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)"
+      "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)",
+      "Bash(powershell.exe -File \".specify/scripts/powershell/create-new-feature.ps1\" -Json \"tôi muốn thêm một vài phương thức login qua thằng firebase nữa\" -Number 1 -ShortName \"firebase-login\")",
+      "Bash(PRISMA_MIGRATE_SKIP_GENERATE=false npx prisma db push)"
     ]
   }
 }
