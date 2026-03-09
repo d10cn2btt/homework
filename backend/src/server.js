@@ -1,7 +1,7 @@
-require('dotenv').config();
-const http = require('http');
-const app = require('./app');
-const { attachToServer } = require('./ws/ws.server');
+import 'dotenv/config';
+import http from 'http';
+import app from './app.js';
+import { attachToServer } from './ws/ws.server.js';
 
 const PORT = process.env.PORT || 3000;
 

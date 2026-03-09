@@ -1,16 +1,16 @@
-const request = require('supertest');
-const app = require('../../app');
-const admin = require('../../config/firebase');
-const prisma = require('../../config/db');
-
-jest.mock('../../config/firebase', () => ({
+jest.mock('../../config/firebase.js', () => ({
   auth: jest.fn(),
 }));
 
-jest.mock('../../config/db', () => ({
+jest.mock('../../config/db.js', () => ({
   user: { findUnique: jest.fn() },
   message: { findMany: jest.fn() },
 }));
+
+import request from 'supertest';
+import app from '../../app.js';
+import admin from '../../config/firebase.js';
+import prisma from '../../config/db.js';
 
 const mockVerifyToken = (uid = 'user1') => {
   admin.auth.mockReturnValue({

@@ -1,5 +1,5 @@
-const chatService = require('../services/chat.service');
-const { ValidationError } = require('../utils/errors');
+import * as chatService from '../services/chat.service.js';
+import { ValidationError } from '../utils/errors.js';
 
 async function listRooms(req, res, next) {
   try {
@@ -43,4 +43,4 @@ async function getMessages(req, res, next) {
   }
 }
 
-module.exports = { listRooms, createRoom, addMember, getMessages };
+export { listRooms, createRoom, addMember, getMessages };

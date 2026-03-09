@@ -1,19 +1,19 @@
-const http = require('http');
-const WebSocket = require('ws');
-const app = require('../../app');
-const { attachToServer } = require('../../ws/ws.server');
-const admin = require('../../config/firebase');
-const chatService = require('../../services/chat.service');
-
-jest.mock('../../config/firebase', () => ({
+jest.mock('../../config/firebase.js', () => ({
   auth: jest.fn(),
 }));
 
-jest.mock('../../config/db', () => ({
+jest.mock('../../config/db.js', () => ({
   user: { findUnique: jest.fn() },
 }));
 
-jest.mock('../../services/chat.service');
+jest.mock('../../services/chat.service.js');
+
+import http from 'http';
+import WebSocket from 'ws';
+import app from '../../app.js';
+import { attachToServer } from '../../ws/ws.server.js';
+import admin from '../../config/firebase.js';
+import * as chatService from '../../services/chat.service.js';
 
 let server;
 let port;

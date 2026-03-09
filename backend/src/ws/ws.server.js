@@ -1,6 +1,6 @@
-const { WebSocketServer } = require('ws');
-const { authenticateWS } = require('./ws.auth');
-const { handleMessage } = require('./ws.handler');
+import { WebSocketServer } from 'ws';
+import { authenticateWS } from './ws.auth.js';
+import { handleMessage } from './ws.handler.js';
 
 const wss = new WebSocketServer({ noServer: true });
 const registry = new Map();
@@ -34,4 +34,4 @@ function attachToServer(httpServer) {
   });
 }
 
-module.exports = { registry, attachToServer };
+export { registry, attachToServer };

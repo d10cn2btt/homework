@@ -1,16 +1,16 @@
-const http = require('http');
-const WebSocket = require('ws');
-const app = require('../../app');
-const { attachToServer } = require('../../ws/ws.server');
-const admin = require('../../config/firebase');
-
-jest.mock('../../config/firebase', () => ({
+jest.mock('../../config/firebase.js', () => ({
   auth: jest.fn(),
 }));
 
-jest.mock('../../config/db', () => ({
+jest.mock('../../config/db.js', () => ({
   user: { findUnique: jest.fn() },
 }));
+
+import http from 'http';
+import WebSocket from 'ws';
+import app from '../../app.js';
+import { attachToServer } from '../../ws/ws.server.js';
+import admin from '../../config/firebase.js';
 
 let server;
 let port;

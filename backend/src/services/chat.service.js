@@ -1,5 +1,5 @@
-const prisma = require('../config/db');
-const { NotFoundError, ForbiddenError, ConflictError } = require('../utils/errors');
+import prisma from '../config/db.js';
+import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errors.js';
 
 async function checkMembership(uid, roomId) {
   const member = await prisma.roomMember.findUnique({
@@ -86,4 +86,4 @@ async function addMember(actorUid, roomId, targetUid) {
   }
 }
 
-module.exports = { checkMembership, getRoomMembers, saveMessage, getRoomMessages, listRooms, createRoom, addMember };
+export { checkMembership, getRoomMembers, saveMessage, getRoomMessages, listRooms, createRoom, addMember };

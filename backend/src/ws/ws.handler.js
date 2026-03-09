@@ -1,4 +1,4 @@
-const chatService = require('../services/chat.service');
+import * as chatService from '../services/chat.service.js';
 
 async function handleChatMessage(ws, uid, frame, registry) {
   const { roomId, content } = frame;
@@ -42,4 +42,4 @@ async function handleMessage(ws, uid, rawData, registry) {
   }
 }
 
-module.exports = { handleMessage };
+export { handleMessage };

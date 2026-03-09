@@ -1,4 +1,4 @@
-const admin = require('../config/firebase');
+import admin from '../config/firebase.js';
 
 async function authenticateWS(req) {
   const token = new URL(req.url, 'http://x').searchParams.get('token');
@@ -7,4 +7,4 @@ async function authenticateWS(req) {
   return { uid: decoded.uid, email: decoded.email, exp: decoded.exp };
 }
 
-module.exports = { authenticateWS };
+export { authenticateWS };
