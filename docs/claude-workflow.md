@@ -63,34 +63,52 @@ Format: method, path, auth required, request body, response body.
 ## Bước 2 — Khi thêm feature mới
 
 ### Feature nhỏ (< 2 giờ)
-Không cần tạo file mới. Nói thẳng:
+Không cần tạo file mới. Mô tả thẳng task với Claude:
 ```
-@docs/decisions.md
 [Mô tả task cụ thể]
+(Optional: @CLAUDE.md nếu cần nhớ convention)
 ```
+Xong → nếu có quyết định đáng ghi (chọn thư viện, pattern): update `decisions.md`.
 
 ---
 
-### Feature vừa (nửa ngày đến 2 ngày)
+### Feature vừa & lớn — flow: Brainstorm → System Design → Tasks
 
-**Làm rõ specs:**
-```
-Tao muốn thêm: [mô tả].
-@CLAUDE.md @docs/spec.md
-Hỏi tao tối đa 3 câu để làm rõ phần mơ hồ.
-```
+Ba bước này mỗi bước là 1 session riêng. Output của bước trước là input của bước sau.
 
-**Cập nhật `api_contract.md`** (nếu có API mới):
-```
-Draft thêm endpoints mới cho feature này vào api_contract.md.
-```
+---
 
-**Tạo `specs/{feature}/tasks.md`:**
+#### Step 1 — Brainstorm
+**Input:**
 ```
-@CLAUDE.md @docs/api_contract.md
-Break down feature này thành tasks nhỏ, mỗi task xong trong 1 session.
-Nhóm: Backend → Tests → Frontend. Format: checkbox list.
+Tao muốn thêm: [mô tả feature].
+@CLAUDE.md @docs/spec.md @docs/rule/brainstorm_rule.md
 ```
+**Output:** `specs/{feature}/design.md` — các hướng tiếp cận + đề xuất của Claude
+
+**Kết thúc khi:** mày confirm chọn hướng nào.
+
+---
+
+#### Step 2 — System Design
+**Input:**
+```
+Tao chọn Hướng X.
+@specs/{feature}/design.md @CLAUDE.md @docs/rule/system_design_rule.md
+```
+**Output:**
+- Append section "## System Design" vào `specs/{feature}/design.md` (data flow, DB changes, edge cases, risks, files cần sửa)
+- Nếu có endpoint mới → update `docs/api_contract.md`
+- Nếu có quyết định kỹ thuật quan trọng → Claude tự append vào `docs/decisions.md`
+
+---
+
+#### Step 3 — Tasks
+**Input:**
+```
+@specs/{feature}/design.md @CLAUDE.md @docs/api_contract.md @docs/rule/task_rule.md
+```
+**Output:** `specs/{feature}/tasks.md` — checkbox list nhóm theo: Setup → Backend → Tests → Frontend
 
 **Code từng task** — mỗi task = 1 session:
 ```
@@ -100,52 +118,6 @@ Task hiện tại: [copy task cụ thể]
 
 ---
 
-### Feature lớn (nhiều ngày) — cần brainstorm trước
-
-**Brainstorm options:**
-```
-Tao cần build: [mô tả feature to].
-@CLAUDE.md @docs/spec.md
-Đưa ra 2-3 cách tiếp cận khác nhau. Mỗi cách: ưu, nhược, phù hợp khi nào.
-Chưa cần code, chỉ cần phân tích.
-```
-
-**Chọn hướng và đào sâu:**
-```
-Tao chọn cách [X] vì [lý do].
-Design chi tiết hơn: data flow, DB schema cần thêm/sửa, edge cases, risk lớn nhất.
-```
-
-**Lưu toàn bộ vào `specs/{feature}/design.md`:**
-```markdown
-# Design: [Tên feature]
-
-## Các hướng đã cân nhắc
-### Hướng 1: [Tên]
-- Ưu: ...
-- Nhược: ...
-
-### Hướng 2: [Tên]
-- Ưu: ...
-- Nhược: ...
-
-## Quyết định: Hướng X
-Lý do: ...
-
-## System design
-- Data flow: ...
-- DB thay đổi: ...
-- Edge cases: ...
-- Risk: ...
-```
-
-**Distill quyết định quan trọng vào `docs/decisions.md`** (ngắn gọn, không cần full context):
-```markdown
-## YYYY-MM-DD — [Tên quyết định]
-Chọn [X] thay vì [Y]. Lý do: ... Hệ quả: ...
-```
-
-Rồi làm tiếp: cập nhật `api_contract.md` nếu cần → tạo `tasks.md` → code từng task.
 Nếu thay đổi scope tổng thể → cập nhật `docs/spec.md` và `CLAUDE.md`.
 
 ---
@@ -202,12 +174,21 @@ project/
 ├── docs/
 │   ├── spec.md                        ← raw specs từ khách hàng, không sửa
 │   ├── decisions.md                   ← quyết định toàn project, cập nhật liên tục
-│   └── api_contract.md                ← cập nhật khi thêm endpoint
+│   ├── api_contract.md                ← cập nhật khi thêm endpoint
+│   └── rule/
+│       ├── brainstorm_rule.md         ← tag ở Step 1, output 2-3 hướng tiếp cận
+│       ├── system_design_rule.md      ← tag ở Step 2, output data flow + DB + edge cases
+│       └── task_rule.md               ← tag ở Step 3, output checkbox task list
 └── specs/
-    ├── 001-user-auth/
-    │   ├── design.md                  ← brainstorm + system design + lý do
-    │   └── tasks.md                   ← implementation checklist
-    └── 002-google-login/
+    ├── 001-admin-create-user/
+    │   ├── design.md                  ← brainstorm + system design của feature
+    │   └── tasks.md                   ← implementation checklist, tick khi xong
+    └── 002-firebase-login/
         ├── design.md
         └── tasks.md
 ```
+
+**Tại sao specs để theo từng feature, không gộp vào 1 file:**
+- Khi làm feature X, chỉ tag `@specs/X/design.md` — không bị noise từ feature khác
+- Mỗi feature có lifecycle riêng: design.md tạo ở brainstorm, tasks.md tick dần khi code
+- `docs/spec.md` là raw customer requirements — khác với design/tasks của từng feature

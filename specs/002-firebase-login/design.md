@@ -1,38 +1,86 @@
-# Design: Firebase Additional Login Methods
+# Design: Firebase Social Login (Google + GitHub)
 
-## Yêu cầu
-Bổ sung thêm các phương thức đăng nhập qua Firebase ngoài email/password:
-- Google Sign-In (P1)
-- GitHub Sign-In (P2)
+## Yêu cầu từ khách hàng
+Thêm đăng nhập bằng Google và GitHub vào hệ thống hiện tại (đã có email/password).
 
-## Các hướng đã cân nhắc
+---
 
-### Hướng 1: signInWithPopup
-- Ưu: đơn giản, Firebase handle toàn bộ redirect flow, UX nhanh trên desktop
-- Nhược: không hoạt động tốt trong mobile webview
+## Firebase Social Login hoạt động thế nào?
 
-### Hướng 2: signInWithRedirect
-- Ưu: mobile-friendly, hoạt động mọi môi trường
-- Nhược: phức tạp hơn, cần handle redirect state (getRedirectResult), UX kém hơn trên desktop
+```
+[User click "Login with Google"]
+        ↓
+Firebase JS SDK → signInWithPopup() → Google OAuth popup
+        ↓
+Google xác thực user → trả credential về Firebase
+        ↓
+Firebase tạo/link user, trả về Firebase ID Token
+        ↓
+onAuthStateChanged fires → AuthContext gọi /auth/sync
+        ↓
+Backend: verifyIdToken() → findOrCreateUser() → DB upsert
+        ↓
+User vào dashboard
+```
 
-## Quyết định: Hướng 1 (signInWithPopup)
-Lý do: App không cần support mobile webview ở giai đoạn này. Popup đơn giản hơn và UX tốt hơn cho target user hiện tại.
+**Key insight:** Backend không cần biết user dùng provider nào. Firebase luôn trả về cùng một loại ID Token — auth middleware và ACL không thay đổi gì.
 
-## System Design
+---
 
-### Flow
-1. User click "Sign in with Google/GitHub" → `signInWithPopup(provider)`
-2. Firebase xử lý OAuth flow → trả về `UserCredential`
-3. Lấy ID Token từ `UserCredential.user.getIdToken()`
-4. Gọi backend như bình thường với token (không cần endpoint mới)
-5. Backend: `verifyIdToken()` hoạt động với mọi Firebase provider — không cần thay đổi
+## Quyết định thiết kế
 
-### Lưu ý quan trọng
-- Backend **không cần thay đổi** — `verifyIdToken()` verify được token từ mọi provider
-- Chỉ cần thay đổi ở Frontend: thêm provider và nút login
-- Lần đầu login với Google/GitHub: user chưa có trong DB → `upsert` khi gọi `/users/me` (đã handle ở 001)
+### 1. Providers: Google + GitHub
+- **Google**: Firebase tự xử lý hoàn toàn, không cần credentials thêm (chỉ bật trong Console)
+- **GitHub**: Cần tạo GitHub OAuth App và điền Client ID + Secret vào Firebase Console
 
-### Edge cases
-- User cancel popup → bắt lỗi `auth/popup-closed-by-user`, hiện toast thông báo, không throw
-- User đã có tài khoản email/password với cùng email → Firebase báo lỗi `auth/account-exists-with-different-credential`, cần hướng dẫn merge hoặc thông báo rõ
-- Network error trong lúc popup → bắt lỗi chung, cho retry
+### 2. UX: Popup (không dùng Redirect)
+- `signInWithPopup()` — user không rời khỏi trang, đơn giản hơn để implement
+- Redirect phù hợp mobile hơn nhưng phức tạp hơn (cần handle `getRedirectResult()`)
+
+### 3. Auto-create account
+- Lần đầu login → Firebase tạo user → backend `/auth/sync` upsert vào DB với role USER
+- Giống flow hiện tại của email/password — không cần thêm bước nhập thông tin
+
+### 4. Edge case: GitHub user ẩn email
+- GitHub cho phép user đặt email private → Firebase token có thể không có `email`
+- Giải pháp: dùng placeholder `{uid}@github.users.noreply` nếu email null
+- UID là unique → placeholder không bao giờ conflict với email thật
+
+### 5. Error: `auth/account-exists-with-different-credential`
+- Xảy ra khi cùng một email đã đăng ký qua provider khác (VD: email/password → sau đó thử GitHub)
+- Firebase block mặc định để bảo vệ user
+- Giải pháp: hiển thị message thân thiện, không auto-merge provider
+
+---
+
+## Firebase Console Setup (thủ công, không phải code)
+
+### Google
+1. Firebase Console → Authentication → Sign-in method
+2. Enable Google provider
+3. Không cần credentials thêm
+
+### GitHub
+1. Tạo GitHub OAuth App tại `github.com/settings/developers`
+   - Homepage URL: URL của app
+   - Authorization callback URL: `https://{project-id}.firebaseapp.com/__/auth/handler`
+2. Copy Client ID + Client Secret
+3. Firebase Console → Authentication → Sign-in method → GitHub → dán vào
+
+---
+
+## Những gì KHÔNG thay đổi
+- `auth.mdw.js` — verifyIdToken() hoạt động với mọi provider
+- `acl.mdw.js` — không đổi
+- `/auth/sync` endpoint — không đổi
+- DB schema — không đổi (User.id = Firebase UID)
+- `AuthContext.jsx` — onAuthStateChanged tự xử lý mọi provider
+
+---
+
+## Files cần thay đổi
+
+| File | Loại thay đổi |
+|------|--------------|
+| `frontend/src/pages/LoginPage.jsx` | Thêm 2 nút social login, handle popup errors |
+| `backend/src/services/users.service.js` | `findOrCreateUser()` handle email = null |

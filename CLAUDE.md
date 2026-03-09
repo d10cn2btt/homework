@@ -21,6 +21,9 @@
 - File không quá 300 dòng, function không quá 40 dòng
 - Không commit `console.log`, dead code, hoặc commented-out code
 
+## Bug, Technical
+- Khi có bug phức tạp hay vấn đề về technical thì đừng sửa code ngay. Hãy trao đổi & đưa ra các solution, ưu nhược điểm rồi tao và mày sẽ cùng lựa chọn
+
 ## Docs
 - `docs/spec.md` — raw requirements từ khách hàng
 - `docs/system_design.md` — kiến trúc tổng thể của project

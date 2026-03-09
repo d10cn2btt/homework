@@ -1,17 +1,29 @@
 # Tasks: 002-firebase-login
 
-## Backend
-- [ ] Không cần thay đổi — verifyIdToken() hoạt động với mọi Firebase provider
+## Firebase Console (thủ công)
+- [ ] Enable Google Sign-in provider trong Firebase Console
+- [ ] Tạo GitHub OAuth App, lấy Client ID + Secret
+- [ ] Enable GitHub Sign-in provider trong Firebase Console, điền credentials
 
-## Tests
-- [ ] Update integration test auth.test.js: mock token từ Google provider
-- [ ] Update unit test auth.mdw.test.js: đảm bảo không hardcode provider
+## Backend
+- [x] `users.service.js` — `findOrCreateUser()`: handle `email = null` từ GitHub
+  - Nếu email null → dùng `${uid}@github.users.noreply` làm placeholder
 
 ## Frontend
-- [ ] Bật Google provider trong Firebase Console
-- [ ] Bật GitHub provider trong Firebase Console + cấu hình GitHub OAuth App
-- [ ] Tạo `googleSignIn()` và `githubSignIn()` trong AuthContext (dùng signInWithPopup)
-- [ ] Thêm nút "Sign in with Google" vào LoginPage
-- [ ] Thêm nút "Sign in with GitHub" vào LoginPage
-- [ ] Xử lý lỗi popup: `auth/popup-closed-by-user` → toast thông báo
-- [ ] Xử lý lỗi: `auth/account-exists-with-different-credential` → thông báo rõ cho user
+- [x] `LoginPage.jsx` — import thêm `signInWithPopup`, `GoogleAuthProvider`, `GithubAuthProvider`
+- [x] `LoginPage.jsx` — thêm `handleSocialLogin(provider)` function
+  - Gọi `signInWithPopup(auth, provider)`
+  - Bỏ qua error `auth/popup-closed-by-user` và `auth/cancelled-popup-request`
+  - Hiển thị message cho các lỗi khác
+- [x] `LoginPage.jsx` — thêm `getErrorMessage` cases mới
+  - `auth/account-exists-with-different-credential`
+  - `auth/popup-blocked`
+- [x] `LoginPage.jsx` — thêm UI: divider "hoặc" + 2 nút Google và GitHub
+
+## Testing
+- [ ] Test Google login — user mới → check DB có record với role USER
+- [ ] Test GitHub login — account có email public → check DB
+- [ ] Test GitHub login — account email private → check DB có placeholder email
+- [ ] Test login lại lần 2 (idempotent — không tạo duplicate)
+- [ ] Test error: cùng email đăng nhập bằng 2 provider khác nhau
+- [ ] Test popup bị đóng giữa chừng — không hiện error

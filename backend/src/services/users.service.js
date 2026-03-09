@@ -15,12 +15,13 @@ async function findOrCreateUser({ uid, email }) {
   let created = false;
 
   if (!user) {
+    const resolvedEmail = email || `${uid}@github.users.noreply`;
     const userRole = await prisma.role.findUnique({ where: { name: 'USER' } });
     user = await prisma.user.create({
       data: {
         id: uid,
-        email,
-        display_name: email.split('@')[0],
+        email: resolvedEmail,
+        display_name: resolvedEmail.split('@')[0],
         status: 'ACTIVE',
         user_roles: { create: { role_id: userRole.id } },
       },
