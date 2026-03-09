@@ -16,6 +16,7 @@ File này là prompt template cho bước brainstorm. Tag vào khi cần Claude 
 - Mỗi hướng phải độc lập — không phải biến thể nhỏ của nhau
 - Chưa đề cập file cụ thể, schema, hay code — chỉ phân tích conceptual
 - Cuối cùng: Claude đề xuất hướng phù hợp nhất + lý do ngắn (không quyết định hộ user)
+- Hãy tập trung vào việc scale, security & consistency
 
 **Format mỗi hướng:**
 ```

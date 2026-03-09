@@ -35,6 +35,7 @@ Tao chọn Hướng X.
 **5. Risks**
 - Top 2-3 risk kỹ thuật
 - Mỗi risk: mô tả + mitigation cụ thể
+- Hãy tập trung vào việc scale, security & consistency
 
 **6. Files cần thay đổi**
 - Table: `File | Loại thay đổi | Ghi chú`

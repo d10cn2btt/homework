@@ -27,6 +27,25 @@ Trade-off giữa freshness và performance: role thay đổi hiếm, 1h là hợ
 
 ---
 
+## 2026-03-09 — Chat realtime: raw WebSocket, không dùng Socket.io
+
+Chọn native `ws` package thay vì Socket.io. Lý do: mục tiêu là hiểu protocol-level flow (HTTP Upgrade handshake, frame parsing, broadcast thủ công) trước khi dùng abstraction.
+
+**Hệ quả:**
+- Auth phải xử lý riêng ở WS upgrade event (không dùng được Express middleware chain trực tiếp)
+- Registry in-memory (`Map<uid, Set<ws>>`) — single-instance only, document rõ
+- Broadcast tự implement, không có built-in rooms như Socket.io
+
+---
+
+## 2026-03-09 — Chat: WS token truyền qua query param
+
+Browser WebSocket API không support custom headers khi handshake. Chọn `?token=<firebase_id_token>` trong URL thay vì header.
+
+**Hệ quả:** Token lộ trong server access log (URL được log). Mitigation: log sanitization hoặc dùng short-lived token riêng — [TBD khi cần].
+
+---
+
 ## 2026-03-09 — Social login: account linking flow cho provider conflict
 
 Firebase treat Google là trusted provider — khi Google login với email đã tồn tại (kể cả tạo bởi GitHub), Firebase tự động link mà không throw error. Chiều ngược lại (GitHub gặp account Google) thì throw `auth/account-exists-with-different-credential`.
