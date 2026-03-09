@@ -1,7 +1,7 @@
-jest.mock('../../../src/config/redis');
+jest.mock('../../../src/config/redis.js');
 
-const redis = require('../../../src/config/redis');
-const { getRoles, setRoles, delRoles } = require('../../../src/services/cache.service');
+import redis from '../../../src/config/redis.js';
+import { getRoles, setRoles, delRoles } from '../../../src/services/cache.service.js';
 
 describe('cache.service', () => {
   beforeEach(() => jest.clearAllMocks());

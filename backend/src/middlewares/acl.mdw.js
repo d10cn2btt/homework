@@ -1,5 +1,5 @@
-const prisma = require('../config/db');
-const { getRoles, setRoles } = require('../services/cache.service');
+import prisma from '../config/db.js';
+import { getRoles, setRoles } from '../services/cache.service.js';
 
 function requireRole(...allowedRoles) {
   return async function aclMiddleware(req, res, next) {
@@ -35,4 +35,4 @@ function requireRole(...allowedRoles) {
   };
 }
 
-module.exports = requireRole;
+export default requireRole;

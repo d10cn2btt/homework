@@ -1,4 +1,4 @@
-const postsService = require('../services/posts.service');
+import * as postsService from '../services/posts.service.js';
 
 async function listPosts(req, res, next) {
   try {
@@ -48,4 +48,4 @@ async function deletePost(req, res, next) {
   }
 }
 
-module.exports = { listPosts, createPost, getPost, updatePost, deletePost };
+export { listPosts, createPost, getPost, updatePost, deletePost };

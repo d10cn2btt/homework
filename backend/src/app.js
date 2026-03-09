@@ -1,12 +1,13 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const logger = require('./utils/logger');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
+import logger from './utils/logger.js';
 
-const authRoutes = require('./routes/auth.routes');
-const profileRoutes = require('./routes/profile.routes');
-const postsRoutes = require('./routes/posts.routes');
-const usersRoutes = require('./routes/users.routes');
+import authRoutes from './routes/auth.routes.js';
+import profileRoutes from './routes/profile.routes.js';
+import postsRoutes from './routes/posts.routes.js';
+import usersRoutes from './routes/users.routes.js';
 
 const app = express();
 
@@ -34,10 +35,10 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-if (require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }
 
-module.exports = app;
+export default app;

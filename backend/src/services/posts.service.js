@@ -1,5 +1,5 @@
-const prisma = require('../config/db');
-const { NotFoundError, ForbiddenError, ValidationError } = require('../utils/errors');
+import prisma from '../config/db.js';
+import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errors.js';
 
 const DELETED_AUTHOR = { id: null, display_name: 'Người dùng đã xóa' };
 
@@ -111,4 +111,4 @@ async function deletePost(id, { uid, roles }) {
   await prisma.post.delete({ where: { id: Number(id) } });
 }
 
-module.exports = { listPosts, createPost, findById, updatePost, deletePost };
+export { listPosts, createPost, findById, updatePost, deletePost };
