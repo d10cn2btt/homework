@@ -36,11 +36,4 @@ class ValidationError extends AppError {
   }
 }
 
-module.exports = {
-  AppError,
-  NotFoundError,
-  ForbiddenError,
-  UnauthorizedError,
-  ConflictError,
-  ValidationError,
-};
+export { AppError, NotFoundError, ForbiddenError, UnauthorizedError, ConflictError, ValidationError };

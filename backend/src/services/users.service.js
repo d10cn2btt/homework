@@ -1,6 +1,6 @@
-const prisma = require('../config/db');
-const { delRoles } = require('./cache.service');
-const { ConflictError, NotFoundError, ValidationError } = require('../utils/errors');
+import prisma from '../config/db.js';
+import { delRoles } from './cache.service.js';
+import { ConflictError, NotFoundError, ValidationError } from '../utils/errors.js';
 
 async function getUserRoles(uid) {
   const userRoles = await prisma.userRole.findMany({
@@ -190,14 +190,4 @@ async function deleteUser(adminSdk, uid) {
   }
 }
 
-module.exports = {
-  findOrCreateUser,
-  getProfile,
-  updateProfile,
-  listUsers,
-  createUser,
-  getUserById,
-  updateUser,
-  deleteUser,
-  getUserRoles,
-};
+export { findOrCreateUser, getProfile, updateProfile, listUsers, createUser, getUserById, updateUser, deleteUser, getUserRoles };

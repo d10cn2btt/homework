@@ -1,9 +1,9 @@
-jest.mock('../../../src/config/db');
-jest.mock('../../../src/services/cache.service');
+jest.mock('../../../src/config/db.js');
+jest.mock('../../../src/services/cache.service.js');
 
-const prisma = require('../../../src/config/db');
-const cacheService = require('../../../src/services/cache.service');
-const requireRole = require('../../../src/middlewares/acl.mdw');
+import prisma from '../../../src/config/db.js';
+import * as cacheService from '../../../src/services/cache.service.js';
+import requireRole from '../../../src/middlewares/acl.mdw.js';
 
 function mockRes() {
   const res = {};

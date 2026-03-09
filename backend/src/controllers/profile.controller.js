@@ -1,4 +1,4 @@
-const { getProfile, updateProfile } = require('../services/users.service');
+import { getProfile, updateProfile } from '../services/users.service.js';
 
 async function getMe(req, res, next) {
   try {
@@ -19,4 +19,4 @@ async function updateMe(req, res, next) {
   }
 }
 
-module.exports = { getMe, updateMe };
+export { getMe, updateMe };

@@ -1,9 +1,9 @@
-jest.mock('../../../src/config/firebase');
-jest.mock('../../../src/config/db');
+jest.mock('../../../src/config/firebase.js');
+jest.mock('../../../src/config/db.js');
 
-const admin = require('../../../src/config/firebase');
-const prisma = require('../../../src/config/db');
-const authMiddleware = require('../../../src/middlewares/auth.mdw');
+import admin from '../../../src/config/firebase.js';
+import prisma from '../../../src/config/db.js';
+import authMiddleware from '../../../src/middlewares/auth.mdw.js';
 
 function mockRes() {
   const res = {};

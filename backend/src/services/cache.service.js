@@ -1,4 +1,4 @@
-const redis = require('../config/redis');
+import redis from '../config/redis.js';
 
 const ROLES_TTL = 3600;
 
@@ -21,4 +21,4 @@ async function delRoles(uid) {
   await redis.del(`user:roles:${uid}`);
 }
 
-module.exports = { getRoles, setRoles, delRoles };
+export { getRoles, setRoles, delRoles };
