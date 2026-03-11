@@ -16,8 +16,17 @@ export function useWebSocket() {
       const ws = new WebSocket(`ws://${host}/ws?token=${token}`);
       wsRef.current = ws;
 
-      ws.onopen = () => setStatus('open');
+      ws.onopen = () => {
+        setStatus('open');
+        const pingInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 30_000);
+        ws.pingInterval = pingInterval;
+      };
       ws.onclose = () => {
+        clearInterval(ws.pingInterval);
         setStatus('closed');
         if (!intentionalClose.current) {
           setTimeout(connect, 3000);
