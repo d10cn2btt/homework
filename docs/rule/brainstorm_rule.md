@@ -1,12 +1,14 @@
 # Brainstorm Rule
 
+
+
 ## Mục đích
 File này là prompt template cho bước brainstorm. Tag vào khi cần Claude đưa ra các hướng tiếp cận cho một feature — trước khi đi vào thiết kế chi tiết hay code.
 
 ## Input cần tag
 ```
 [Mô tả feature ngắn gọn]
-@CLAUDE.md @docs/spec.md @docs/rule/brainstorm_rule.md
+@CLAUDE.md @docs/spec.md @docs/decisions.md @docs/rule/brainstorm_rule.md
 ```
 
 ## Rule cho Claude

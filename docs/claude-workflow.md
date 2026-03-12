@@ -72,9 +72,9 @@ Xong → nếu có quyết định đáng ghi (chọn thư viện, pattern): upd
 
 ---
 
-### Feature vừa & lớn — flow: Brainstorm → System Design → Tasks
+### Feature vừa & lớn — flow: Brainstorm → System Design → Tasks → Review
 
-Ba bước này mỗi bước là 1 session riêng. Output của bước trước là input của bước sau.
+Mỗi bước là 1 session riêng. Output của bước trước là input của bước sau.
 
 ---
 
@@ -82,7 +82,7 @@ Ba bước này mỗi bước là 1 session riêng. Output của bước trướ
 **Input:**
 ```
 Tao muốn thêm: [mô tả feature].
-@CLAUDE.md @docs/spec.md @docs/rule/brainstorm_rule.md
+@CLAUDE.md @docs/spec.md @docs/decisions.md @docs/rule/brainstorm_rule.md
 ```
 **Output:** `specs/{feature}/design.md` — các hướng tiếp cận + đề xuất của Claude
 
@@ -94,7 +94,7 @@ Tao muốn thêm: [mô tả feature].
 **Input:**
 ```
 Tao chọn Hướng X.
-@specs/{feature}/design.md @CLAUDE.md @docs/rule/system_design_rule.md
+@specs/{feature}/design.md @CLAUDE.md @docs/decisions.md @docs/rule/system_design_rule.md
 ```
 **Output:**
 - Append section "## System Design" vào `specs/{feature}/design.md` (data flow, DB changes, edge cases, risks, files cần sửa)
@@ -115,6 +115,24 @@ Tao chọn Hướng X.
 @docs/decisions.md @specs/{feature}/tasks.md
 Task hiện tại: [copy task cụ thể]
 ```
+
+---
+
+#### Step 4 — Review
+**Khi nào chạy:** sau khi tick xong toàn bộ checkbox trong `tasks.md`, trước khi tạo PR.
+
+**Input:**
+```
+@CLAUDE.md @specs/{feature}/tasks.md @docs/rule/review_rule.md
+Review feature này trước khi tao tạo PR.
+```
+**Claude sẽ review theo 4 lớp:** Conventions → Security → Logic & Edge Cases → Tests
+
+**Output:** Report thẳng trong chat.
+- Issue nghiêm trọng (security, logic sai) → Claude fix luôn
+- Issue convention / style → Claude hỏi trước khi sửa
+
+**Sau review:** nếu có quyết định kỹ thuật mới phát sinh → append vào `docs/decisions.md`.
 
 ---
 
@@ -145,6 +163,7 @@ Tóm tắt: đang làm đến đâu, task tiếp theo là gì, có risk gì cầ
 | Scope project thay đổi lớn | `docs/spec.md` + `CLAUDE.md` |
 | Chọn thư viện, pattern, cách handle edge case | `decisions.md` |
 | Brainstorm / system design feature lớn | `specs/{feature}/design.md` |
+| Review phát hiện quyết định kỹ thuật mới | `decisions.md` |
 
 ---
 
@@ -178,7 +197,8 @@ project/
 │   └── rule/
 │       ├── brainstorm_rule.md         ← tag ở Step 1, output 2-3 hướng tiếp cận
 │       ├── system_design_rule.md      ← tag ở Step 2, output data flow + DB + edge cases
-│       └── task_rule.md               ← tag ở Step 3, output checkbox task list
+│       ├── task_rule.md               ← tag ở Step 3, output checkbox task list
+│       └── review_rule.md             ← tag ở Step 4, review 4 lớp trước khi tạo PR
 └── specs/
     ├── 001-admin-create-user/
     │   ├── design.md                  ← brainstorm + system design của feature

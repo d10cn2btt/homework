@@ -6,7 +6,7 @@ File này là prompt template cho bước system design. Tag vào sau khi đã c
 ## Input cần tag
 ```
 Tao chọn Hướng X.
-@specs/{feature}/design.md @CLAUDE.md @docs/rule/system_design_rule.md
+@specs/{feature}/design.md @CLAUDE.md @docs/decisions.md @docs/rule/system_design_rule.md
 ```
 
 ## Rule cho Claude
