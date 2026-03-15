@@ -1,11 +1,11 @@
 {
   "name": "homework-backend",
   "version": "1.0.0",
-  "main": "src/app.js",
+  "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/app.js",
-    "start": "node src/app.js",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --coverage",
@@ -22,7 +22,8 @@
     "firebase-admin": "^12.0.0",
     "ioredis": "^5.0.0",
     "pino": "^8.0.0",
-    "pino-pretty": "^10.0.0"
+    "pino-pretty": "^10.0.0",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "jest": "^29.0.0",

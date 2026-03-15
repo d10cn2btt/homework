@@ -23,7 +23,20 @@
       "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json)",
       "Bash(powershell -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)",
       "Bash(powershell.exe -File \".specify/scripts/powershell/create-new-feature.ps1\" -Json \"tôi muốn thêm một vài phương thức login qua thằng firebase nữa\" -Number 1 -ShortName \"firebase-login\")",
-      "Bash(PRISMA_MIGRATE_SKIP_GENERATE=false npx prisma db push)"
+      "Bash(PRISMA_MIGRATE_SKIP_GENERATE=false npx prisma db push)",
+      "Read(//c/Users/bui.tuan.truong/.claude/**)",
+      "Read(//c/Users/bui.tuan.truong/.config/claude/**)",
+      "Bash(npm show:*)",
+      "Bash(npm search:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker port:*)",
+      "Bash(tasklist /FI \"PID eq 8636\" /FO LIST)",
+      "Bash(cmd /c \"tasklist /FI \"\"PID eq 8636\"\" /FO LIST 2>&1 | head -3\")",
+      "Bash(cmd //c \"tasklist\")",
+      "Bash(powershell -command \"Get-Process -Id 8636 | Select-Object Name, Id\")",
+      "mcp__postgres-homework__execute_raw_query",
+      "Bash(npx prisma:*)"
     ]
   }
 }

@@ -59,3 +59,4 @@ Mỗi task = 1 session riêng:
 @docs/decisions.md @specs/{feature}/tasks.md
 Task hiện tại: [copy task cụ thể từ tasks.md]
 ```
+Sau khi code xong task → chạy `/simplify` để clean up code trước khi sang task tiếp theo.

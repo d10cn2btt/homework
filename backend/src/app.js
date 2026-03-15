@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 import postsRoutes from './routes/posts.routes.js';
 import usersRoutes from './routes/users.routes.js';
+import chatRoutes from './routes/chat.routes.js';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/me', profileRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/chat', chatRoutes);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Global error handler

@@ -19,6 +19,11 @@ enum RoleName {
   USER
 }
 
+enum MessageType {
+  USER
+  SYSTEM
+}
+
 model User {
   id           String     @id
   email        String     @unique
@@ -27,8 +32,11 @@ model User {
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt
 
-  user_roles UserRole[]
-  posts      Post[]
+  user_roles       UserRole[]
+  posts            Post[]
+  rooms_created    Room[]
+  room_memberships RoomMember[]
+  messages         Message[]
 
   @@index([status])
 }
@@ -63,4 +71,41 @@ model Post {
 
   @@index([author_id])
   @@index([created_at(sort: Desc)])
+}
+
+model Room {
+  id         String    @id @default(uuid())
+  name       String
+  created_by String
+  created_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  creator  User         @relation(fields: [created_by], references: [id])
+  members  RoomMember[]
+  messages Message[]
+}
+
+model RoomMember {
+  room_id   String
+  user_id   String
+  joined_at DateTime @default(now())
+
+  room Room @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([room_id, user_id])
+}
+
+model Message {
+  id         String      @id @default(uuid())
+  room_id    String
+  sender_id  String?
+  type       MessageType @default(USER)
+  content    String      @db.Text
+  created_at DateTime    @default(now())
+
+  room   Room  @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  sender User? @relation(fields: [sender_id], references: [id], onDelete: SetNull)
+
+  @@index([room_id, created_at(sort: Desc)])
 }

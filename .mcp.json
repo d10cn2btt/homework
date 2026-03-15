@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "postgres-homework": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-postgres",
+        "postgresql://postgres:password@localhost:5432/homework_dev"
+      ]
+    }
+  }
+}

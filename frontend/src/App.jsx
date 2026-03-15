@@ -12,6 +12,7 @@ import UsersPage from './pages/UsersPage';
 import UserCreatePage from './pages/UserCreatePage';
 import UserDetailPage from './pages/UserDetailPage';
 import ErrorPage from './pages/ErrorPage';
+import ChatPage from './pages/ChatPage';
 
 function NavBar() {
   const { currentUser, isAdmin, signOut } = useAuth();
@@ -36,6 +37,14 @@ function NavBar() {
           }
         >
           Bài viết
+        </NavLink>
+        <NavLink
+          to="/chat"
+          className={({ isActive }) =>
+            isActive ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-blue-600'
+          }
+        >
+          Chat
         </NavLink>
         {isAdmin && (
           <NavLink
@@ -151,6 +160,14 @@ function AppRoutes() {
               <AdminRoute>
                 <UserDetailPage />
               </AdminRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />
