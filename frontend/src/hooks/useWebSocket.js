@@ -12,9 +12,9 @@ export function useWebSocket() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) return;
 
-      const host = window.location.host;
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${protocol}//${host}/ws?token=${token}`);
+      const wsBase = import.meta.env.VITE_WS_URL
+        ?? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+      const ws = new WebSocket(`${wsBase}/ws?token=${token}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
