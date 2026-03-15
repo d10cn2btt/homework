@@ -13,7 +13,8 @@ export function useWebSocket() {
       if (!token) return;
 
       const host = window.location.host;
-      const ws = new WebSocket(`ws://${host}/ws?token=${token}`);
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${host}/ws?token=${token}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
