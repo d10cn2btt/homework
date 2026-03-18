@@ -1,4 +1,31 @@
 services:
+  api:
+    build: ./backend
+    container_name: homework-api
+    ports:
+      - "3000:3000"
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/homework_dev
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    build: ./frontend
+    container_name: homework-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
   postgres:
     image: postgres:16-alpine
     container_name: homework-postgres
@@ -12,7 +39,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: homework-redis
     ports:
       - "6379:6379"
