@@ -37,7 +37,9 @@
       "Bash(powershell -command \"Get-Process -Id 8636 | Select-Object Name, Id\")",
       "mcp__postgres-homework__execute_raw_query",
       "Bash(npx prisma:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(docker run:*)",
+      "Bash(sudo rm:*)"
     ]
   }
 }

@@ -46,6 +46,41 @@ Browser WebSocket API không support custom headers khi handshake. Chọn `?toke
 
 ---
 
+## 2026-03-20 — Chat load balancing: Hướng A (Gateway + connId registry)
+
+Chọn API Gateway làm WS proxy + connId registry thay vì Redis Pub/Sub (Hướng B). Lý do: cần tách WS transport layer ra khỏi business logic Instance để scale 2 tầng độc lập; deliver targeted thay vì fan-out; Instance hoàn toàn stateless HTTP.
+
+**Hệ quả:**
+- Gateway là process riêng biệt (không phải Express Instance), 1 instance duy nhất (SPOF accepted)
+- Redis lưu `ws:registry:{userId} → [{connId, gatewayUrl}]` (array để hỗ trợ multi-device)
+- `gatewayUrl` là fixed `http://gateway:8080` (docker internal hostname)
+
+---
+
+## 2026-03-20 — Gateway runtime: Node.js + ws package
+
+Chọn Node.js thay vì Go cho Gateway process. Lý do: cùng runtime với Instance (không thêm ngôn ngữ mới), event loop phù hợp giữ nhiều WS connection đồng thời, đủ tốt cho scale hiện tại.
+
+**Hệ quả:** Nếu sau này cần giữ >50k WS connections đồng thời thì revisit Go (goroutine per conn, ~8KB vs ~50KB memory per connection).
+
+---
+
+## 2026-03-20 — LB: Nginx đứng giữa Gateway và Instance; 1 Gateway instance (SPOF accepted)
+
+Nginx làm LB cho Instance pool. Gateway là 1 instance duy nhất — client connect thẳng, không cần LB trước Gateway. SPOF accepted ở giai đoạn này, scale multi-gateway để sau.
+
+**Hệ quả:** `gatewayUrl` trong Redis là fixed `http://gateway:8080` (docker internal hostname), không có service discovery phức tạp. Khi cần scale Gateway thì cần bổ sung Gateway LB và revisit routing logic.
+
+---
+
+## 2026-03-20 — WS registry: lưu array thay vì single entry để hỗ trợ multi-device
+
+Redis key `ws:registry:{userId}` lưu array `[{connId, gatewayId, gatewayUrl}]` thay vì single object. Lý do: user có thể mở nhiều tab/thiết bị đồng thời — nếu overwrite thì tab cũ mất delivery.
+
+**Hệ quả:** Instance phải iterate qua array khi deliver; phải xóa đúng entry (theo connId) khi disconnect, không xóa cả key.
+
+---
+
 ## 2026-03-09 — Social login: account linking flow cho provider conflict
 
 Firebase treat Google là trusted provider — khi Google login với email đã tồn tại (kể cả tạo bởi GitHub), Firebase tự động link mà không throw error. Chiều ngược lại (GitHub gặp account Google) thì throw `auth/account-exists-with-different-credential`.

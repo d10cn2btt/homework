@@ -19,6 +19,10 @@ File này là prompt template cho bước brainstorm. Tag vào khi cần Claude 
 - Chưa đề cập file cụ thể, schema, hay code — chỉ phân tích conceptual
 - Cuối cùng: Claude đề xuất hướng phù hợp nhất + lý do ngắn (không quyết định hộ user)
 - Hãy tập trung vào việc scale, security & consistency
+- **Mỗi hướng phải có 3 phần diagram** — vẽ bằng ASCII, xem được thẳng trên file MD, không dùng mermaid hay tool ngoài:
+  1. **System Design**: box diagram thể hiện các component và giao thức kết nối giữa chúng
+  2. **Data Flow**: timeline ngang thể hiện request đi vào/ra từng service theo thời gian
+  3. **Step-by-step**: numbered list mô tả từng bước bằng text
 
 **Format mỗi hướng:**
 ```
@@ -27,6 +31,36 @@ Mô tả: [1 câu]
 - Ưu: [tối đa 3 bullet]
 - Nhược: [tối đa 3 bullet]
 - Phù hợp khi: [điều kiện cụ thể]
+
+**System Design:**
+\```
+        ┌───────────┐          ┌───────────┐
+        │ Component │          │ Component │
+        └─────┬─────┘          └─────┬─────┘
+              │  Protocol            │
+              └──────────┬───────────┘
+                         │
+                  ┌──────▼──────┐
+                  │  Component  │
+                  └─────────────┘
+\```
+
+**Data Flow:**
+\```
+  ComponentA    ComponentB    ComponentC
+      │               │            │
+      │───action─────►│            │
+      │               │───action──►│
+      │               │◄───ok──────│
+      │◄──result──────│            │
+\```
+
+**Step-by-step:**
+\```
+[1] ComponentA  ──── action ──────>  ComponentB
+[2] ComponentB  ──── action ──────>  ComponentC
+[3] ComponentC  ──── result ──────>  ComponentA
+\```
 ```
 
 ## Output
@@ -38,6 +72,15 @@ Ghi vào `specs/{feature}/design.md` — **tạo file mới** với cấu trúc:
 ## Options
 
 ### Hướng A: ...
+[ưu/nhược/phù hợp khi]
+
+**Data Flow:**
+\```
+  ComponentA     ComponentB     ...
+      |               |
+      |-- action ---->|
+\```
+
 ### Hướng B: ...
 ### Hướng C: ...
 

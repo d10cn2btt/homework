@@ -50,12 +50,17 @@ Tao chọn Hướng X.
 
 **5. Edge cases**
 - Liệt kê 3-5 edge case quan trọng nhất
-- Mỗi edge case: mô tả tình huống + cách xử lý ngắn gọn
+- Mỗi edge case viết đủ 3 phần:
+  - **Tình huống**: mô tả cụ thể — ai làm gì, hệ thống ở trạng thái nào, điều gì xảy ra (dùng ví dụ thực tế nếu giúp rõ hơn)
+  - **Nguyên nhân**: tại sao đây là vấn đề về mặt kỹ thuật
+  - **Xử lý**: solution cụ thể, đủ để implement (không chung chung)
 
 **6. Risks**
-- Top 2-3 risk kỹ thuật
-- Mỗi risk: mô tả + mitigation cụ thể
-- Hãy tập trung vào việc scale, security & consistency
+- Top 2-3 risk kỹ thuật, tập trung vào scale, security & consistency
+- Mỗi risk viết đủ 3 phần:
+  - **Vấn đề**: mô tả kỹ thuật + hậu quả nếu không xử lý
+  - **Nguyên nhân**: tại sao risk này tồn tại trong thiết kế hiện tại
+  - **Mitigation**: giải pháp cụ thể, nếu accepted thì ghi rõ lý do accept
 
 **7. Files cần thay đổi**
 - Table: `File | Loại thay đổi | Ghi chú`
@@ -88,10 +93,16 @@ Append section mới vào `specs/{feature}/design.md`:
 [draft endpoints hoặc "Không có endpoint mới"]
 
 ### Edge cases
-- **[Tên case]**: [tình huống] → [cách xử lý]
+- **[Tên case]**
+  - Tình huống: [mô tả cụ thể]
+  - Nguyên nhân: [tại sao là vấn đề]
+  - Xử lý: [solution]
 
 ### Risks
-- **[Tên risk]**: [mô tả] → Mitigation: [cách giảm thiểu]
+- **[Tên risk]**
+  - Vấn đề: [mô tả + hậu quả nếu không xử lý]
+  - Nguyên nhân: [tại sao risk này tồn tại]
+  - Mitigation: [giải pháp, hoặc "Accepted vì..."]
 
 ### Files cần thay đổi
 | File | Loại thay đổi | Ghi chú |
