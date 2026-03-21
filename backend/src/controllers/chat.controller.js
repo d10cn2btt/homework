@@ -1,11 +1,8 @@
 import * as chatService from '../services/chat.service.js';
-import { registry } from '../ws/ws.server.js';
 import { ValidationError } from '../utils/errors.js';
 
-function broadcastToRoom(memberUids, payload) {
-  const outbound = JSON.stringify(payload);
-  memberUids.forEach((uid) => registry.get(uid)?.forEach((sock) => sock.send(outbound)));
-}
+// Broadcast giờ do saveAndBroadcast() trong chat.service.js lo qua Gateway.
+// Controller không cần broadcast thủ công nữa.
 
 async function listRooms(req, res, next) {
   try {
@@ -30,9 +27,7 @@ async function createRoom(req, res, next) {
 async function joinRoom(req, res, next) {
   try {
     const systemMsg = await chatService.joinRoom(req.user.uid, req.params.roomId);
-    const memberUids = await chatService.getRoomMembers(req.params.roomId);
-    broadcastToRoom(memberUids, { type: 'system', ...systemMsg });
-    res.json({ success: true, data: null });
+    res.json({ success: true, data: systemMsg });
   } catch (err) {
     next(err);
   }
@@ -40,10 +35,8 @@ async function joinRoom(req, res, next) {
 
 async function leaveRoom(req, res, next) {
   try {
-    const memberUids = await chatService.getRoomMembers(req.params.roomId);
     const systemMsg = await chatService.leaveRoom(req.user.uid, req.params.roomId);
-    broadcastToRoom(memberUids, { type: 'system', ...systemMsg });
-    res.json({ success: true, data: null });
+    res.json({ success: true, data: systemMsg });
   } catch (err) {
     next(err);
   }
@@ -83,8 +76,10 @@ async function addMember(req, res, next) {
 async function getMessages(req, res, next) {
   try {
     const before = req.query.before || null;
+    const since = req.query.since || null;
     const limit = Math.min(Number(req.query.limit) || 50, 100);
-    const result = await chatService.getRoomMessages(req.params.roomId, before, limit);
+    // Dùng object param để support cả before (pagination) lẫn since (missed messages)
+    const result = await chatService.getRoomMessages(req.params.roomId, { before, since, limit });
     res.json({ success: true, data: result.messages, meta: { nextCursor: result.nextCursor } });
   } catch (err) {
     next(err);

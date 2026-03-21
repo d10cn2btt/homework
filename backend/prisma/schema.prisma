@@ -25,6 +25,12 @@ enum MessageType {
   SYSTEM
 }
 
+enum MessageStatus {
+  SENT
+  DELIVERED
+}
+
+
 model User {
   id           String     @id
   email        String     @unique
@@ -102,6 +108,7 @@ model Message {
   room_id    String
   sender_id  String?
   type       MessageType @default(USER)
+  status     MessageStatus @default(SENT)
   content    String      @db.Text
   created_at DateTime    @default(now())
 
