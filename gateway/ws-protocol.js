@@ -17,6 +17,7 @@ export const WS_CLOSE = {
 // Dùng trong payload { type: 'error', code: ... } — connection vẫn sống, chỉ báo lỗi mid-session.
 
 export const WS_ERROR = {
+  CONN_NOT_FOUND: 'CONN_NOT_FOUND',   // connId không tồn tại trong Gateway RAM (Gateway restart) — deliver.route trả 404
   DELIVER_FAILED: 'DELIVER_FAILED',   // Message đã lưu DB nhưng recipient offline — sẽ deliver khi online
   INVALID_PAYLOAD: 'INVALID_PAYLOAD', // Payload thiếu field bắt buộc (roomId, content)
   INTERNAL_ERROR: 'INTERNAL_ERROR',   // Gateway không reach được Instance (Nginx/Instance down)

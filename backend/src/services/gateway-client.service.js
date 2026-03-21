@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import { deregister } from './ws-registry.service.js';
+import logger from '../utils/logger.js';
 
 // Retry delays (ms): lần 1 → 100ms, lần 2 → 300ms, lần 3 → 1s
 const DELAYS = [100, 300, 1000];
@@ -33,6 +34,6 @@ export async function deliver(gatewayUrl, connId, userId, payload) {
     }
   }
   // Hết retry mà vẫn lỗi → log cảnh báo, không throw (không muốn crash cả broadcast)
-  console.warn(`[gateway-client] deliver failed after retries connId=${connId}`);
+  logger.warn({ connId }, '[gateway-client] deliver failed after retries');
   return { success: false };
 }

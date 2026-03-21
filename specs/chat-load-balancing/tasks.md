@@ -66,18 +66,18 @@
 
 ## Tests
 
-- [ ] `ws-registry.service`: `register()` → `lookup()` trả đúng array; `deregister()` xóa đúng connId; DEL key khi array empty
-- [ ] `gateway-client.service`: mock axios fail 2 lần rồi succeed → verify 3 lần gọi; mock 404 → verify `deregister()` được gọi
-- [ ] `POST /internal/ws/connect`: body hợp lệ → 200 + Redis key `ws:registry:{userId}` tồn tại
-- [ ] `POST /internal/ws/message`: members có entries trong Redis → `deliver()` được gọi cho từng member → response `{ ok: true }`
-- [ ] `POST /internal/ws/message`: tất cả members offline (Redis empty) → message vẫn persist DB với `status: SENT`, response `{ ok: true, data: { deliveredCount: 0 } }`
-- [ ] `POST /internal/ws/disconnect`: Redis entry bị xóa
-- [ ] Multi-device: 1 user có 2 connIds → `deliver()` gọi 2 lần; 1 CONN_NOT_FOUND → entry đó deregister, entry kia deliver thành công
+- [x] `ws-registry.service`: `register()` → `lookup()` trả đúng array; `deregister()` xóa đúng connId; DEL key khi array empty
+- [x] `gateway-client.service`: mock axios fail 2 lần rồi succeed → verify 3 lần gọi; mock 404 → verify `deregister()` được gọi
+- [x] `POST /internal/ws/connect`: body hợp lệ → 200 + Redis key `ws:registry:{userId}` tồn tại
+- [x] `POST /internal/ws/message`: members có entries trong Redis → `deliver()` được gọi cho từng member → response `{ ok: true }`
+- [x] `POST /internal/ws/message`: tất cả members offline (Redis empty) → message vẫn persist DB với `status: SENT`, response `{ ok: true, data: { deliveredCount: 0 } }`
+- [x] `POST /internal/ws/disconnect`: Redis entry bị xóa
+- [x] Multi-device: 1 user có 2 connIds → `deliver()` gọi 2 lần; 1 CONN_NOT_FOUND → entry đó deregister, entry kia deliver thành công
 
 ---
 
 ## Frontend
 > Các task Frontend đã được move sang `tech-debt.md` vì không blocking cho load-balancing backend.
 
-- [ ] `frontend/src/hooks/useWebSocket.js` — sửa WS URL sang `VITE_GATEWAY_URL`; exponential backoff; xử lý close codes 4001/4002/4003/1001
-- [ ] `frontend/src/pages/ChatPage.jsx` — fetch missed messages sau khi WS reconnect
+- [x] `frontend/src/hooks/useWebSocket.js` — sửa WS URL sang `VITE_GATEWAY_URL`; exponential backoff; xử lý close codes 4001/4002/4003/1001
+- [x] `frontend/src/pages/ChatPage.jsx` — fetch missed messages sau khi WS reconnect

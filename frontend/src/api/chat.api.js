@@ -28,9 +28,10 @@ export function addMember(roomId, userId) {
   return api.post(`/chat/rooms/${roomId}/members`, { userId }).then((r) => r.data.data);
 }
 
-export function getMessages(roomId, { before, limit } = {}) {
+export function getMessages(roomId, { before, since, limit } = {}) {
   const params = {};
   if (before) params.before = before;
+  if (since) params.since = since;
   if (limit) params.limit = limit;
   return api.get(`/chat/rooms/${roomId}/messages`, { params }).then((r) => ({
     messages: r.data.data,

@@ -18,6 +18,4 @@ const wss = new WebSocketServer({ server });
 wss.on('connection', handleConnection);
 
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-  console.log(`Gateway running on port ${PORT}`);
-});
+server.listen(PORT);

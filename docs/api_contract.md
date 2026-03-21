@@ -114,7 +114,7 @@ Quyền (ACL): Yêu cầu role ADMIN.
 Request Body:
 
 {
-  "roles": ["ADMIN", "USER"] 
+  "roles": ["ADMIN", "USER"]
 }
 
 
@@ -126,3 +126,260 @@ Response:
     "message": "Cập nhật quyền thành công."
   }
 }
+
+
+---
+
+## 3. Chat API
+
+Auth: tất cả endpoints yêu cầu `Authorization: Bearer <Firebase ID Token>`.
+
+### 3.1. Rooms
+
+#### GET /api/chat/rooms
+Lấy danh sách tất cả rooms. Response kèm trạng thái `isMember`, `isOwner` và `lastMessage` của mỗi room.
+
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "room-uuid",
+      "name": "General",
+      "isOwner": true,
+      "isMember": true,
+      "lastMessage": {
+        "content": "Hello",
+        "createdAt": "2026-03-21T10:00:00.000Z"
+      }
+    }
+  ]
+}
+```
+
+#### POST /api/chat/rooms
+Tạo room mới. Creator tự động được add làm member đầu tiên.
+
+Request Body:
+```json
+{ "name": "Room Name" }
+```
+
+Response `201`:
+```json
+{
+  "success": true,
+  "data": { "id": "room-uuid", "name": "Room Name", "isOwner": true, "isMember": true, "lastMessage": null }
+}
+```
+
+Errors: `400 VALIDATION_ERROR` (thiếu name)
+
+#### POST /api/chat/rooms/:roomId/join
+Tham gia room.
+
+Response:
+```json
+{
+  "success": true,
+  "data": { "id": "msg-uuid", "roomId": "room-uuid", "type": "SYSTEM", "senderId": null, "content": "Alice đã tham gia room", "createdAt": "..." }
+}
+```
+
+Errors: `404 ROOM_NOT_FOUND`, `409 ALREADY_MEMBER`
+
+#### POST /api/chat/rooms/:roomId/leave
+Rời room. Creator không thể leave nếu còn member khác.
+
+Response: SYSTEM message tương tự join.
+
+Errors: `404 ROOM_NOT_FOUND`, `403 NOT_MEMBER`, `403 CREATOR_CANNOT_LEAVE`
+
+#### PATCH /api/chat/rooms/:roomId
+Đổi tên room. Chỉ creator.
+
+Request Body:
+```json
+{ "name": "New Name" }
+```
+
+Response:
+```json
+{ "success": true, "data": { "id": "room-uuid", "name": "New Name" } }
+```
+
+Errors: `404 ROOM_NOT_FOUND`, `403 FORBIDDEN`, `400 VALIDATION_ERROR`
+
+#### DELETE /api/chat/rooms/:roomId
+Soft delete room. Chỉ creator.
+
+Response:
+```json
+{ "success": true, "data": null }
+```
+
+Errors: `404 ROOM_NOT_FOUND`, `403 FORBIDDEN`
+
+#### POST /api/chat/rooms/:roomId/members
+Thêm member vào room. Chỉ creator.
+
+Request Body:
+```json
+{ "userId": "target-firebase-uid" }
+```
+
+Response:
+```json
+{ "success": true, "data": null }
+```
+
+Errors: `400 VALIDATION_ERROR`, `404 ROOM_NOT_FOUND`, `404 USER_NOT_FOUND`, `403 FORBIDDEN`, `409 ALREADY_MEMBER`
+
+### 3.2. Messages
+
+#### GET /api/chat/rooms/:roomId/messages
+Lấy lịch sử tin nhắn. Hỗ trợ cursor-based pagination và fetch missed messages.
+
+Query Params:
+| Param | Mô tả |
+|---|---|
+| `before` | messageId — lấy messages có id < before (load more) |
+| `since` | ISO timestamp — lấy messages sau thời điểm này (fetch missed khi reconnect WS) |
+| `limit` | Số lượng tối đa (default: 50, max: 100) |
+
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "msg-uuid",
+      "roomId": "room-uuid",
+      "type": "USER",
+      "senderId": "firebase-uid",
+      "senderName": "Alice",
+      "content": "Hello",
+      "createdAt": "2026-03-21T10:00:00.000Z"
+    }
+  ],
+  "meta": { "nextCursor": "msg-uuid-of-last-item-or-null" }
+}
+```
+
+---
+
+## 4. WebSocket Protocol (Gateway)
+
+Endpoint: `ws://gateway:8080?token=<Firebase ID Token>`
+
+Auth: Token được verify khi connect. Kết nối bị đóng nếu token invalid/expired.
+
+### Client → Gateway (frames gửi lên)
+
+#### Message
+```json
+{ "type": "message", "roomId": "room-uuid", "content": "Hello" }
+```
+
+#### Ping (keepalive mỗi 30s)
+```json
+{ "type": "ping" }
+```
+
+### Gateway → Client (frames nhận về)
+
+#### Message (broadcast từ room)
+```json
+{
+  "type": "message",
+  "data": {
+    "id": "msg-uuid",
+    "roomId": "room-uuid",
+    "type": "USER",
+    "senderId": "firebase-uid",
+    "senderName": "Alice",
+    "content": "Hello",
+    "createdAt": "2026-03-21T10:00:00.000Z"
+  }
+}
+```
+
+#### Pong
+```json
+{ "type": "pong" }
+```
+
+#### Error
+```json
+{ "type": "error", "code": "INTERNAL_ERROR", "messageId": "msg-uuid" }
+```
+
+Error codes: `DELIVER_FAILED`, `INVALID_PAYLOAD`, `INTERNAL_ERROR`
+
+### Close Codes
+
+| Code | Nghĩa | FE nên xử lý |
+|---|---|---|
+| `4001` | Token invalid | Redirect `/login`, không reconnect |
+| `4002` | Token expired | Refresh Firebase token → reconnect |
+| `4003` | Duplicate connection | Không reconnect |
+| `1001` | Gateway restart | Reconnect với exponential backoff |
+
+---
+
+## 5. Internal API (Gateway → Instance)
+
+> Chỉ dùng nội bộ. Nginx block path `/internal` từ bên ngoài (return 403).
+> Không có auth middleware — bảo vệ bằng network isolation.
+
+#### POST /internal/ws/connect
+Gateway gọi khi user connect WS thành công.
+
+Request Body:
+```json
+{ "userId": "firebase-uid", "connId": "uuid", "gatewayUrl": "http://gateway:8080" }
+```
+
+Response: `{ "ok": true }`
+
+#### POST /internal/ws/message
+Gateway forward message từ WS client. Instance persist DB và broadcast.
+
+Request Body:
+```json
+{ "from": "firebase-uid", "roomId": "room-uuid", "content": "Hello" }
+```
+
+Response:
+```json
+{ "ok": true, "data": { "messageId": "msg-uuid", "deliveredCount": 2 } }
+```
+
+#### POST /internal/ws/disconnect
+Gateway gọi khi user đóng WS.
+
+Request Body:
+```json
+{ "userId": "firebase-uid", "connId": "uuid" }
+```
+
+Response: `{ "ok": true }`
+
+---
+
+## 6. Gateway Deliver API (Instance → Gateway)
+
+> Instance gọi trực tiếp vào Gateway URL lấy từ Redis (không qua Nginx).
+
+#### POST /deliver
+Push payload tới một WS connection cụ thể.
+
+Request Body:
+```json
+{ "connId": "uuid", "payload": { "type": "message", "data": { ... } } }
+```
+
+Response:
+- `200` `{ "success": true }` — ws.send() thành công
+- `404` `{ "success": false, "error": "CONN_NOT_FOUND" }` — connId không còn trong registry

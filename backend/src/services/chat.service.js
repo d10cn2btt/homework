@@ -2,6 +2,7 @@ import prisma from '../config/db.js';
 import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errors.js';
 import { deliver } from './gateway-client.service.js';
 import * as wsRegistry from './ws-registry.service.js';
+import { ERR, WS_FRAME } from '../constants/index.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ async function saveAndBroadcast(fromId, roomId, content) {
     const entries = await wsRegistry.lookup(memberId);
     for (const { connId, gatewayUrl } of entries) {
       const result = await deliver(gatewayUrl, connId, memberId, {
-        type: 'message',
+        type: WS_FRAME.MESSAGE,
         data: message,
       });
       if (result.success) deliveredCount++;
@@ -134,12 +135,12 @@ async function createRoom(uid, name) {
 // Thêm user vào room, tạo SYSTEM message thông báo
 async function joinRoom(uid, roomId) {
   const room = await prisma.room.findUnique({ where: { id: roomId, deleted_at: null } });
-  if (!room) throw new NotFoundError('ROOM_NOT_FOUND');
+  if (!room) throw new NotFoundError(ERR.ROOM_NOT_FOUND);
 
   try {
     await prisma.roomMember.create({ data: { room_id: roomId, user_id: uid } });
   } catch (err) {
-    if (err.code === 'P2002') throw new ConflictError('ALREADY_MEMBER');
+    if (err.code === 'P2002') throw new ConflictError(ERR.ALREADY_MEMBER);
     throw err;
   }
 
@@ -154,16 +155,16 @@ async function joinRoom(uid, roomId) {
 // Creator không được leave nếu còn member khác.
 async function leaveRoom(uid, roomId) {
   const room = await prisma.room.findUnique({ where: { id: roomId, deleted_at: null } });
-  if (!room) throw new NotFoundError('ROOM_NOT_FOUND');
+  if (!room) throw new NotFoundError(ERR.ROOM_NOT_FOUND);
 
   const membership = await prisma.roomMember.findUnique({
     where: { room_id_user_id: { room_id: roomId, user_id: uid } },
   });
-  if (!membership) throw new ForbiddenError('NOT_MEMBER');
+  if (!membership) throw new ForbiddenError(ERR.NOT_MEMBER);
 
   if (room.created_by === uid) {
     const count = await prisma.roomMember.count({ where: { room_id: roomId } });
-    if (count > 1) throw new ForbiddenError('CREATOR_CANNOT_LEAVE');
+    if (count > 1) throw new ForbiddenError(ERR.CREATOR_CANNOT_LEAVE);
   }
 
   const user = await prisma.user.findUnique({ where: { id: uid }, select: { display_name: true } });
@@ -179,8 +180,8 @@ async function leaveRoom(uid, roomId) {
 // Đổi tên room — chỉ creator mới được phép
 async function renameRoom(uid, roomId, name) {
   const room = await prisma.room.findUnique({ where: { id: roomId, deleted_at: null } });
-  if (!room) throw new NotFoundError('ROOM_NOT_FOUND');
-  if (room.created_by !== uid) throw new ForbiddenError('FORBIDDEN');
+  if (!room) throw new NotFoundError(ERR.ROOM_NOT_FOUND);
+  if (room.created_by !== uid) throw new ForbiddenError(ERR.FORBIDDEN);
 
   const updated = await prisma.room.update({ where: { id: roomId }, data: { name } });
   return { id: updated.id, name: updated.name };
@@ -189,10 +190,27 @@ async function renameRoom(uid, roomId, name) {
 // Soft delete room — chỉ creator mới được phép
 async function deleteRoom(uid, roomId) {
   const room = await prisma.room.findUnique({ where: { id: roomId, deleted_at: null } });
-  if (!room) throw new NotFoundError('ROOM_NOT_FOUND');
-  if (room.created_by !== uid) throw new ForbiddenError('FORBIDDEN');
+  if (!room) throw new NotFoundError(ERR.ROOM_NOT_FOUND);
+  if (room.created_by !== uid) throw new ForbiddenError(ERR.FORBIDDEN);
 
   await prisma.room.update({ where: { id: roomId }, data: { deleted_at: new Date() } });
+}
+
+// Thêm user vào room — chỉ creator mới được phép
+async function addMember(callerUid, roomId, targetUserId) {
+  const room = await prisma.room.findUnique({ where: { id: roomId, deleted_at: null } });
+  if (!room) throw new NotFoundError(ERR.ROOM_NOT_FOUND);
+  if (room.created_by !== callerUid) throw new ForbiddenError(ERR.FORBIDDEN);
+
+  const target = await prisma.user.findUnique({ where: { id: targetUserId } });
+  if (!target) throw new NotFoundError(ERR.USER_NOT_FOUND);
+
+  try {
+    await prisma.roomMember.create({ data: { room_id: roomId, user_id: targetUserId } });
+  } catch (err) {
+    if (err.code === 'P2002') throw new ConflictError(ERR.ALREADY_MEMBER);
+    throw err;
+  }
 }
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
@@ -209,4 +227,5 @@ export {
   leaveRoom,
   renameRoom,
   deleteRoom,
+  addMember,
 };

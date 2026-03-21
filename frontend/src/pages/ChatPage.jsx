@@ -5,10 +5,29 @@ import { listRooms, createRoom, joinRoom, leaveRoom, renameRoom, deleteRoom, get
 import RoomList from '../components/chat/RoomList';
 import MessageList from '../components/chat/MessageList';
 import MessageInput from '../components/chat/MessageInput';
+import { API_ERR, WS_ERROR, WS_STATUS } from '../constants/index.js';
+
+const ERROR_MESSAGES = {
+  [API_ERR.VALIDATION_ERROR]:     'Dữ liệu không hợp lệ.',
+  [API_ERR.ROOM_NOT_FOUND]:       'Room không tồn tại.',
+  [API_ERR.FORBIDDEN]:            'Bạn không có quyền thực hiện thao tác này.',
+  [API_ERR.ALREADY_MEMBER]:       'Bạn đã là thành viên của room này.',
+  [API_ERR.NOT_MEMBER]:           'Bạn không phải thành viên của room này.',
+  [API_ERR.CREATOR_CANNOT_LEAVE]: 'Người tạo room không thể rời khi còn thành viên khác.',
+  [API_ERR.USER_NOT_FOUND]:       'Không tìm thấy người dùng.',
+  [WS_ERROR.DELIVER_FAILED]:      'Tin nhắn không gửi được đến một số thành viên.',
+  [WS_ERROR.INVALID_PAYLOAD]:     'Tin nhắn không hợp lệ.',
+  [WS_ERROR.INTERNAL_ERROR]:      'Lỗi server, vui lòng thử lại.',
+};
+
+function getErrorMessage(err) {
+  const code = err?.response?.data?.message;
+  return ERROR_MESSAGES[code] ?? err?.response?.data?.message ?? 'Có lỗi xảy ra, vui lòng thử lại.';
+}
 
 export default function ChatPage() {
   const { currentUser } = useAuth();
-  const { messages: realtimeMessages, sendMessage, status } = useWebSocket();
+  const { messages: realtimeMessages, sendMessage, status, reconnectedAt, lastWsError } = useWebSocket();
 
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
@@ -17,6 +36,35 @@ export default function ChatPage() {
   const [hasMore, setHasMore] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [error, setError] = useState(null);
+
+  // Auto-dismiss error sau 4 giây
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(null), 4000);
+    return () => clearTimeout(t);
+  }, [error]);
+
+  // Show WS error frames
+  useEffect(() => {
+    if (!lastWsError) return;
+    setError(ERROR_MESSAGES[lastWsError.code] ?? 'Lỗi kết nối.');
+  }, [lastWsError]);
+
+  // Fetch missed messages sau khi WS reconnect
+  useEffect(() => {
+    if (!reconnectedAt || !selectedRoomId) return;
+    getMessages(selectedRoomId, { since: reconnectedAt })
+      .then(({ messages }) => {
+        if (messages.length === 0) return;
+        setHistoryMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newMsgs = messages.filter((m) => !existingIds.has(m.id));
+          return [...prev, ...newMsgs];
+        });
+      })
+      .catch(() => {});
+  }, [reconnectedAt, selectedRoomId]);
 
   useEffect(() => {
     listRooms().then(setRooms).catch(() => {});
@@ -52,8 +100,8 @@ export default function ChatPage() {
       const room = await createRoom(name);
       setRooms((prev) => [...prev, room]);
       setSelectedRoomId(room.id);
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   }, []);
 
@@ -62,8 +110,8 @@ export default function ChatPage() {
       await joinRoom(roomId);
       setRooms((prev) => prev.map((r) => r.id === roomId ? { ...r, isMember: true } : r));
       setSelectedRoomId(roomId);
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   }, []);
 
@@ -75,7 +123,7 @@ export default function ChatPage() {
       setSelectedRoomId(null);
       setHistoryMessages([]);
     } catch (err) {
-      if (err.response?.data?.message) alert(err.response.data.message);
+      setError(getErrorMessage(err));
     }
   }, [selectedRoomId]);
 
@@ -86,8 +134,8 @@ export default function ChatPage() {
       const updated = await renameRoom(selectedRoomId, renameValue.trim());
       setRooms((prev) => prev.map((r) => r.id === selectedRoomId ? { ...r, name: updated.name } : r));
       setRenaming(false);
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   }, [selectedRoomId, renameValue]);
 
@@ -98,8 +146,8 @@ export default function ChatPage() {
       setRooms((prev) => prev.filter((r) => r.id !== selectedRoomId));
       setSelectedRoomId(null);
       setHistoryMessages([]);
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   }, [selectedRoomId]);
 
@@ -133,6 +181,15 @@ export default function ChatPage() {
       />
 
       <div className="flex flex-col flex-1 overflow-hidden">
+        {error && (
+          <div
+            className="mx-4 mt-2 px-3 py-2 rounded bg-red-50 border border-red-200 text-sm text-red-700 cursor-pointer"
+            onClick={() => setError(null)}
+          >
+            {error}
+          </div>
+        )}
+
         {selectedRoomId ? (
           <>
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
@@ -176,7 +233,7 @@ export default function ChatPage() {
               </div>
             </div>
             <MessageList messages={allMessages} hasMore={hasMore} onLoadMore={handleLoadMore} currentUserId={currentUser?.id} />
-            <MessageInput onSend={handleSend} disabled={status !== 'open'} />
+            <MessageInput onSend={handleSend} disabled={status !== WS_STATUS.OPEN} />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400">
