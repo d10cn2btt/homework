@@ -23,6 +23,7 @@
     "ioredis": "^5.0.0",
     "pino": "^8.0.0",
     "pino-pretty": "^10.0.0",
+    "axios": "^1.7.0",
     "ws": "^8.19.0"
   },
   "devDependencies": {
@@ -30,24 +31,5 @@
     "nodemon": "^3.0.0",
     "prisma": "^5.0.0",
     "supertest": "^6.0.0"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "coverageDirectory": "coverage",
-    "collectCoverageFrom": [
-      "src/middlewares/**/*.js",
-      "src/services/**/*.js"
-    ],
-    "coverageThresholds": {
-      "global": {
-        "lines": 80,
-        "functions": 80,
-        "branches": 80,
-        "statements": 80
-      }
-    }
   }
 }

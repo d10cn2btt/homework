@@ -1,12 +1,12 @@
 export default {
   testEnvironment: 'node',
-  testMatch: ['**/tests/**/*.test.js'],
+  testMatch: ['**/src/tests/**/*.test.js'],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/middlewares/**/*.js',
     'src/services/**/*.js',
   ],
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       lines: 80,
       functions: 80,

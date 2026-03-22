@@ -4,6 +4,7 @@
 
 import * as wsRegistry from '../../services/ws-registry.service.js';
 import { saveAndBroadcast } from '../../services/chat.service.js';
+import logger from '../../utils/logger.js';
 
 // Gọi khi user connect WS thành công trên Gateway.
 // Gateway gửi lên để Instance ghi vào Redis registry.
@@ -11,6 +12,7 @@ export async function handleConnect(req, res, next) {
   try {
     const { userId, connId, gatewayUrl } = req.body;
     await wsRegistry.register(userId, connId, gatewayUrl);
+    logger.info({ userId, connId, gatewayUrl }, '[ws] registered');
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -23,6 +25,7 @@ export async function handleMessage(req, res, next) {
   try {
     const { from, roomId, content } = req.body;
     const result = await saveAndBroadcast(from, roomId, content);
+    logger.info({ from, roomId, ...result }, '[ws] message broadcast');
     res.json({ ok: true, data: result });
   } catch (err) {
     next(err);
@@ -35,6 +38,7 @@ export async function handleDisconnect(req, res, next) {
   try {
     const { userId, connId } = req.body;
     await wsRegistry.deregister(userId, connId);
+    logger.info({ userId, connId }, '[ws] deregistered');
     res.json({ ok: true });
   } catch (err) {
     next(err);

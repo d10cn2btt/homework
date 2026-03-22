@@ -1,11 +1,14 @@
 import express from 'express';
 import registry from './conn-registry.js';
 import { WS_ERROR } from './ws-protocol.js';
+import logger from './logger.js';
 
 const router = express.Router();
 
 router.post('/deliver', (req, res) => {
   const { connId, payload } = req.body;
+
+  logger.debug({ connId, type: payload?.type }, '[deliver] received');
 
   if (!registry.has(connId)) {
     return res.status(404).json({ success: false, error: WS_ERROR.CONN_NOT_FOUND });

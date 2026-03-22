@@ -1,23 +1,24 @@
-jest.mock('axios');
-jest.mock('../../services/ws-registry.service.js', () => ({
-  deregister: jest.fn(),
-}));
+import { jest, beforeEach, describe, test, expect } from '@jest/globals';
 
-import axios from 'axios';
-import { deliver } from '../../services/gateway-client.service.js';
-import * as wsRegistry from '../../services/ws-registry.service.js';
+const mockAxios = { post: jest.fn() };
+const mockWsRegistry = { deregister: jest.fn() };
+
+jest.unstable_mockModule('axios', () => ({ default: mockAxios }));
+jest.unstable_mockModule('../../services/ws-registry.service.js', () => mockWsRegistry);
+
+const { deliver } = await import('../../services/gateway-client.service.js');
 
 beforeEach(() => jest.clearAllMocks());
 
 describe('deliver()', () => {
   test('thành công ngay lần đầu', async () => {
-    axios.post.mockResolvedValue({ data: { success: true } });
+    mockAxios.post.mockResolvedValue({ data: { success: true } });
 
     const result = await deliver('http://gw:8080', 'conn1', 'user1', { type: 'message' });
 
     expect(result).toEqual({ success: true });
-    expect(axios.post).toHaveBeenCalledTimes(1);
-    expect(axios.post).toHaveBeenCalledWith(
+    expect(mockAxios.post).toHaveBeenCalledTimes(1);
+    expect(mockAxios.post).toHaveBeenCalledWith(
       'http://gw:8080/deliver',
       { connId: 'conn1', payload: { type: 'message' } },
       { timeout: 3000 },
@@ -25,7 +26,7 @@ describe('deliver()', () => {
   });
 
   test('fail 2 lần rồi succeed → verify gọi đúng 3 lần', async () => {
-    axios.post
+    mockAxios.post
       .mockRejectedValueOnce(new Error('network error'))
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValue({ data: { success: true } });
@@ -33,28 +34,28 @@ describe('deliver()', () => {
     const result = await deliver('http://gw:8080', 'conn1', 'user1', { type: 'message' });
 
     expect(result).toEqual({ success: true });
-    expect(axios.post).toHaveBeenCalledTimes(3);
+    expect(mockAxios.post).toHaveBeenCalledTimes(3);
   }, 5000);
 
   test('404 CONN_NOT_FOUND → deregister được gọi, không retry', async () => {
     const err = new Error('not found');
     err.response = { status: 404 };
-    axios.post.mockRejectedValue(err);
+    mockAxios.post.mockRejectedValue(err);
 
     const result = await deliver('http://gw:8080', 'conn1', 'user1', { type: 'message' });
 
     expect(result).toEqual({ success: false });
-    expect(wsRegistry.deregister).toHaveBeenCalledWith('user1', 'conn1');
-    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(mockWsRegistry.deregister).toHaveBeenCalledWith('user1', 'conn1');
+    expect(mockAxios.post).toHaveBeenCalledTimes(1);
   });
 
   test('hết retry vẫn lỗi → return { success: false }', async () => {
-    axios.post.mockRejectedValue(new Error('timeout'));
+    mockAxios.post.mockRejectedValue(new Error('timeout'));
 
     const result = await deliver('http://gw:8080', 'conn1', 'user1', { type: 'message' });
 
     expect(result).toEqual({ success: false });
-    expect(axios.post).toHaveBeenCalledTimes(3);
-    expect(wsRegistry.deregister).not.toHaveBeenCalled();
+    expect(mockAxios.post).toHaveBeenCalledTimes(3);
+    expect(mockWsRegistry.deregister).not.toHaveBeenCalled();
   }, 5000);
 });

@@ -701,3 +701,49 @@ export function getMessages(roomId, { before, since, limit } = {}) {
 ```
 
 **Vai trò:** Thin wrapper cho Axios. Param `since` (ISO timestamp) là điểm mới — dùng để fetch missed messages sau reconnect.
+
+---
+
+## Phần 4 — Debug Checkpoints
+
+Khi message gửi nhưng không hiện trên UI, trace theo 6 checkpoint sau (theo thứ tự data flow):
+
+```
+[CP1] gateway/ws-handler.js       ws.on('message')          Gateway nhận message từ browser chưa?
+[CP2] ws.controller.js            handleMessage()           Backend nhận request từ Gateway chưa?
+[CP3] chat.service.js             saveAndBroadcast()        Broadcast đến bao nhiêu members?
+[CP4] gateway/deliver.route.js    POST /deliver             Gateway nhận lệnh deliver chưa?
+[CP5] useWebSocket.js             ws.onmessage              Browser nhận WS frame chưa?
+[CP6] ChatPage.jsx                realtimeForRoom filter    Filter ra được message không?
+```
+
+### Cách xem log
+
+**Server (CP1–CP4):**
+```bash
+docker compose logs -f gateway instance-1 instance-2 instance-3
+```
+
+**Frontend (CP5–CP6):** DevTools Console của browser.
+
+### Lưu ý khi debug gateway
+
+Gateway **không có volume mount** — sửa code phải rebuild:
+```bash
+docker compose up -d --build gateway
+```
+
+Backend có volume mount + nodemon → sửa code tự reload, không cần restart.
+
+### Log levels hiện tại
+
+| Checkpoint | File | Level | Nội dung |
+|------------|------|-------|----------|
+| CP1 | `gateway/ws-handler.js` | `info` | `[ws] connected` khi user kết nối |
+| CP2 | `ws.controller.js` | `info` | `[ws] registered` sau khi ghi Redis |
+| CP3 | `ws.controller.js` | `info` | `[ws] message broadcast` — kèm `deliveredCount` |
+| CP4 | `gateway/deliver.route.js` | `debug` | `[deliver] received` — chỉ hiện khi non-production |
+| — | `gateway-client.service.js` | `warn` | Deliver fail sau hết retry |
+| — | `ws.controller.js` | `info` | `[ws] deregistered` khi user disconnect |
+
+> `debug` log ở CP4 tự tắt trên production (`NODE_ENV=production`). Dùng `console.log` tạm để debug thì phải xóa sau.

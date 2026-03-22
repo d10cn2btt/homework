@@ -1,22 +1,22 @@
-jest.mock('../../config/firebase.js', () => ({
-  auth: jest.fn(),
-}));
+import { jest, beforeEach, describe, test, expect } from '@jest/globals';
 
-jest.mock('../../config/db.js', () => ({
+const mockAdmin = { auth: jest.fn() };
+const mockPrisma = {
   user: { findUnique: jest.fn() },
   message: { findMany: jest.fn() },
-}));
+};
 
-import request from 'supertest';
-import app from '../../app.js';
-import admin from '../../config/firebase.js';
-import prisma from '../../config/db.js';
+jest.unstable_mockModule('../../config/firebase.js', () => ({ default: mockAdmin }));
+jest.unstable_mockModule('../../config/db.js', () => ({ default: mockPrisma }));
+
+const { default: request } = await import('supertest');
+const { default: app } = await import('../../app.js');
 
 const mockVerifyToken = (uid = 'user1') => {
-  admin.auth.mockReturnValue({
+  mockAdmin.auth.mockReturnValue({
     verifyIdToken: jest.fn().mockResolvedValue({ uid, email: `${uid}@test.com` }),
   });
-  prisma.user.findUnique.mockResolvedValue({ id: uid, status: 'ACTIVE' });
+  mockPrisma.user.findUnique.mockResolvedValue({ id: uid, status: 'ACTIVE' });
 };
 
 const authHeader = () => ({ Authorization: 'Bearer valid-token' });
@@ -32,11 +32,13 @@ function makeMessages(count, startIdx = 0) {
   }));
 }
 
+beforeEach(() => jest.clearAllMocks());
+
 describe('GET /api/chat/rooms/:id/messages', () => {
   test('no before → returns up to 50 messages', async () => {
     mockVerifyToken();
     const msgs = makeMessages(50);
-    prisma.message.findMany.mockResolvedValue(msgs);
+    mockPrisma.message.findMany.mockResolvedValue(msgs);
 
     const res = await request(app)
       .get('/api/chat/rooms/room1/messages')
@@ -50,7 +52,7 @@ describe('GET /api/chat/rooms/:id/messages', () => {
   test('limit=2 → returns 2 messages with nextCursor', async () => {
     mockVerifyToken();
     const msgs = makeMessages(2);
-    prisma.message.findMany.mockResolvedValue(msgs);
+    mockPrisma.message.findMany.mockResolvedValue(msgs);
 
     const res = await request(app)
       .get('/api/chat/rooms/room1/messages?limit=2')
@@ -64,7 +66,7 @@ describe('GET /api/chat/rooms/:id/messages', () => {
   test('before=<cursor> → returns messages before cursor, not including cursor', async () => {
     mockVerifyToken();
     const msgs = makeMessages(3, 10);
-    prisma.message.findMany.mockResolvedValue(msgs);
+    mockPrisma.message.findMany.mockResolvedValue(msgs);
 
     const res = await request(app)
       .get('/api/chat/rooms/room1/messages?before=msg-13')
@@ -73,7 +75,7 @@ describe('GET /api/chat/rooms/:id/messages', () => {
     expect(res.status).toBe(200);
     const ids = res.body.data.map((m) => m.id);
     expect(ids).not.toContain('msg-13');
-    const callArgs = prisma.message.findMany.mock.calls[0][0];
+    const callArgs = mockPrisma.message.findMany.mock.calls[0][0];
     expect(callArgs.where.id).toEqual({ lt: 'msg-13' });
   });
 });

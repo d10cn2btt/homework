@@ -160,7 +160,10 @@ export default function ChatPage() {
 
   const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
 
-  const realtimeForRoom = realtimeMessages.filter((m) => m.roomId === selectedRoomId);
+  const realtimeForRoom = realtimeMessages
+    .filter((m) => m.data?.roomId === selectedRoomId)
+    .map((m) => m.data);
+
   const allMessages = (() => {
     const seen = new Set();
     return [...historyMessages, ...realtimeForRoom].filter((m) => {

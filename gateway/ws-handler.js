@@ -3,6 +3,7 @@ import axios from 'axios';
 import registry from './conn-registry.js';
 import { verifyToken } from './ws-auth.js';
 import { WS_CLOSE, WS_CLIENT_TYPE, wsError, WS_ERROR } from './ws-protocol.js';
+import logger from './logger.js';
 
 const NGINX_URL = process.env.NGINX_URL;
 const GATEWAY_SELF_URL = process.env.GATEWAY_SELF_URL;
@@ -25,11 +26,20 @@ export async function handleConnection(ws, req) {
   const connId = uuidv4();
   registry.set(connId, ws);
 
-  await axios.post(`${NGINX_URL}/internal/ws/connect`, {
-    userId,
-    connId,
-    gatewayUrl: GATEWAY_SELF_URL,
-  });
+  try {
+    await axios.post(`${NGINX_URL}/internal/ws/connect`, {
+      userId,
+      connId,
+      gatewayUrl: GATEWAY_SELF_URL,
+    });
+  } catch (err) {
+    logger.error({ userId, connId, err: err.message }, '[ws] failed to register connection');
+    registry.delete(connId);
+    ws.close(WS_CLOSE.INTERNAL_ERROR ?? 1011);
+    return;
+  }
+
+  logger.info({ userId, connId }, '[ws] connected');
 
   ws.on('message', async (data) => {
     try {
@@ -54,11 +64,12 @@ export async function handleConnection(ws, req) {
 
   ws.on('close', async () => {
     registry.delete(connId);
+    logger.info({ userId, connId }, '[ws] disconnected');
     await axios.post(`${NGINX_URL}/internal/ws/disconnect`, { userId, connId });
   });
 
   ws.on('error', (err) => {
-    console.error(`[ws] connId=${connId}`, err);
+    logger.error({ userId, connId, err: err.message }, '[ws] socket error');
     ws.close();
   });
 }

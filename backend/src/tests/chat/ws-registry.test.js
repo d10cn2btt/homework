@@ -1,21 +1,19 @@
-jest.mock('../../config/redis.js', () => ({
-  get: jest.fn(),
-  set: jest.fn(),
-  del: jest.fn(),
-}));
+import { jest, beforeEach, describe, test, expect } from '@jest/globals';
 
-import redis from '../../config/redis.js';
-import { register, deregister, lookup } from '../../services/ws-registry.service.js';
+const mockRedis = { get: jest.fn(), set: jest.fn(), del: jest.fn() };
+jest.unstable_mockModule('../../config/redis.js', () => ({ default: mockRedis }));
+
+const { register, deregister, lookup } = await import('../../services/ws-registry.service.js');
 
 beforeEach(() => jest.clearAllMocks());
 
 describe('register()', () => {
   test('thêm entry khi user chưa có connection', async () => {
-    redis.get.mockResolvedValue(null);
+    mockRedis.get.mockResolvedValue(null);
 
     await register('user1', 'conn1', 'http://gateway:8080');
 
-    expect(redis.set).toHaveBeenCalledWith(
+    expect(mockRedis.set).toHaveBeenCalledWith(
       'ws:registry:user1',
       JSON.stringify([{ connId: 'conn1', gatewayUrl: 'http://gateway:8080' }]),
       'EX',
@@ -24,13 +22,13 @@ describe('register()', () => {
   });
 
   test('append entry khi user đã có connection khác (multi-device)', async () => {
-    redis.get.mockResolvedValue(
+    mockRedis.get.mockResolvedValue(
       JSON.stringify([{ connId: 'conn1', gatewayUrl: 'http://gw:8080' }]),
     );
 
     await register('user1', 'conn2', 'http://gw:8080');
 
-    expect(redis.set).toHaveBeenCalledWith(
+    expect(mockRedis.set).toHaveBeenCalledWith(
       'ws:registry:user1',
       JSON.stringify([
         { connId: 'conn1', gatewayUrl: 'http://gw:8080' },
@@ -48,7 +46,7 @@ describe('lookup()', () => {
       { connId: 'conn1', gatewayUrl: 'http://gw:8080' },
       { connId: 'conn2', gatewayUrl: 'http://gw:8080' },
     ];
-    redis.get.mockResolvedValue(JSON.stringify(entries));
+    mockRedis.get.mockResolvedValue(JSON.stringify(entries));
 
     const result = await lookup('user1');
 
@@ -56,7 +54,7 @@ describe('lookup()', () => {
   });
 
   test('trả [] khi user offline (key không tồn tại)', async () => {
-    redis.get.mockResolvedValue(null);
+    mockRedis.get.mockResolvedValue(null);
 
     const result = await lookup('user1');
 
@@ -66,7 +64,7 @@ describe('lookup()', () => {
 
 describe('deregister()', () => {
   test('xóa đúng connId, giữ lại entry còn lại', async () => {
-    redis.get.mockResolvedValue(
+    mockRedis.get.mockResolvedValue(
       JSON.stringify([
         { connId: 'conn1', gatewayUrl: 'http://gw:8080' },
         { connId: 'conn2', gatewayUrl: 'http://gw:8080' },
@@ -75,32 +73,32 @@ describe('deregister()', () => {
 
     await deregister('user1', 'conn1');
 
-    expect(redis.set).toHaveBeenCalledWith(
+    expect(mockRedis.set).toHaveBeenCalledWith(
       'ws:registry:user1',
       JSON.stringify([{ connId: 'conn2', gatewayUrl: 'http://gw:8080' }]),
       'EX',
       7200,
     );
-    expect(redis.del).not.toHaveBeenCalled();
+    expect(mockRedis.del).not.toHaveBeenCalled();
   });
 
   test('DEL key khi xóa connId cuối cùng', async () => {
-    redis.get.mockResolvedValue(
+    mockRedis.get.mockResolvedValue(
       JSON.stringify([{ connId: 'conn1', gatewayUrl: 'http://gw:8080' }]),
     );
 
     await deregister('user1', 'conn1');
 
-    expect(redis.del).toHaveBeenCalledWith('ws:registry:user1');
-    expect(redis.set).not.toHaveBeenCalled();
+    expect(mockRedis.del).toHaveBeenCalledWith('ws:registry:user1');
+    expect(mockRedis.set).not.toHaveBeenCalled();
   });
 
   test('no-op khi key không tồn tại', async () => {
-    redis.get.mockResolvedValue(null);
+    mockRedis.get.mockResolvedValue(null);
 
     await deregister('user1', 'conn1');
 
-    expect(redis.set).not.toHaveBeenCalled();
-    expect(redis.del).not.toHaveBeenCalled();
+    expect(mockRedis.set).not.toHaveBeenCalled();
+    expect(mockRedis.del).not.toHaveBeenCalled();
   });
 });

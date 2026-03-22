@@ -39,7 +39,12 @@
       "Bash(npx prisma:*)",
       "Bash(docker compose:*)",
       "Bash(docker run:*)",
-      "Bash(sudo rm:*)"
+      "Bash(sudo rm:*)",
+      "Bash(npm install:*)",
+      "Bash(docker info:*)",
+      "Bash(npm test:*)",
+      "Bash(find /home/buituantruong/projects/homework/backend -name prisma.schema -o -name schema.prisma -o -name .env* -o -name jest.setup*)",
+      "Bash(grep -h \"^import\\\\|^from\" src/tests/chat/*.test.js)"
     ]
   }
 }

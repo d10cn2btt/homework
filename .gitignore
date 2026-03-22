@@ -30,8 +30,7 @@ Thumbs.db
 # Test coverage
 coverage/
 
-# Prisma generated
-backend/prisma/migrations/
+# Prisma generated client (do not ignore migrations/)
 
 # Vite cache
 frontend/.vite/

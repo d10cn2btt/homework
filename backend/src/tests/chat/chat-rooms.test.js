@@ -1,32 +1,34 @@
-jest.mock('../../config/firebase.js', () => ({
-  auth: jest.fn(),
-}));
+import { jest, beforeEach, describe, test, expect } from '@jest/globals';
 
-jest.mock('../../config/db.js', () => ({
+const mockAdmin = { auth: jest.fn() };
+const mockPrisma = {
   user: { findUnique: jest.fn() },
-  room: { findUnique: jest.fn(), create: jest.fn() },
+  room: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn() },
   roomMember: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn() },
   message: { findMany: jest.fn() },
-}));
+};
 
-import request from 'supertest';
-import app from '../../app.js';
-import admin from '../../config/firebase.js';
-import prisma from '../../config/db.js';
+jest.unstable_mockModule('../../config/firebase.js', () => ({ default: mockAdmin }));
+jest.unstable_mockModule('../../config/db.js', () => ({ default: mockPrisma }));
+
+const { default: request } = await import('supertest');
+const { default: app } = await import('../../app.js');
 
 const mockVerifyToken = (uid = 'user1') => {
-  admin.auth.mockReturnValue({
+  mockAdmin.auth.mockReturnValue({
     verifyIdToken: jest.fn().mockResolvedValue({ uid, email: `${uid}@test.com` }),
   });
-  prisma.user.findUnique.mockResolvedValue({ id: uid, status: 'ACTIVE' });
+  mockPrisma.user.findUnique.mockResolvedValue({ id: uid, status: 'ACTIVE' });
 };
 
 const authHeader = (token = 'valid-token') => ({ Authorization: `Bearer ${token}` });
 
+beforeEach(() => jest.clearAllMocks());
+
 describe('POST /api/chat/rooms', () => {
   test('valid name → 201, room created', async () => {
     mockVerifyToken('creator1');
-    prisma.room.create.mockResolvedValue({ id: 'room1', name: 'My Room', created_by: 'creator1' });
+    mockPrisma.room.create.mockResolvedValue({ id: 'room1', name: 'My Room', created_by: 'creator1' });
 
     const res = await request(app)
       .post('/api/chat/rooms')
@@ -53,8 +55,8 @@ describe('POST /api/chat/rooms', () => {
 describe('GET /api/chat/rooms', () => {
   test('returns only rooms user is member of', async () => {
     mockVerifyToken('user1');
-    prisma.roomMember.findMany.mockResolvedValue([
-      { room: { id: 'room1', name: 'Room 1', messages: [] } },
+    mockPrisma.room.findMany.mockResolvedValue([
+      { id: 'room1', name: 'Room 1', created_by: 'other', members: [{ user_id: 'user1' }], messages: [] },
     ]);
 
     const res = await request(app)
@@ -70,9 +72,11 @@ describe('GET /api/chat/rooms', () => {
 describe('POST /api/chat/rooms/:id/members', () => {
   test('creator adds member → 200', async () => {
     mockVerifyToken('creator1');
-    prisma.room.findUnique.mockResolvedValue({ id: 'room1', name: 'Room 1', created_by: 'creator1' });
-    prisma.user.findUnique.mockResolvedValueOnce({ id: 'creator1', status: 'ACTIVE' }).mockResolvedValueOnce({ id: 'user2' });
-    prisma.roomMember.create.mockResolvedValue({});
+    mockPrisma.room.findUnique.mockResolvedValue({ id: 'room1', name: 'Room 1', created_by: 'creator1' });
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce({ id: 'creator1', status: 'ACTIVE' })
+      .mockResolvedValueOnce({ id: 'user2' });
+    mockPrisma.roomMember.create.mockResolvedValue({});
 
     const res = await request(app)
       .post('/api/chat/rooms/room1/members')
@@ -85,8 +89,8 @@ describe('POST /api/chat/rooms/:id/members', () => {
 
   test('non-creator adds member → 403', async () => {
     mockVerifyToken('other-user');
-    prisma.room.findUnique.mockResolvedValue({ id: 'room1', name: 'Room 1', created_by: 'creator1' });
-    prisma.user.findUnique.mockResolvedValueOnce({ id: 'other-user', status: 'ACTIVE' });
+    mockPrisma.room.findUnique.mockResolvedValue({ id: 'room1', name: 'Room 1', created_by: 'creator1' });
+    mockPrisma.user.findUnique.mockResolvedValueOnce({ id: 'other-user', status: 'ACTIVE' });
 
     const res = await request(app)
       .post('/api/chat/rooms/room1/members')
@@ -98,11 +102,13 @@ describe('POST /api/chat/rooms/:id/members', () => {
 
   test('user already member → 409', async () => {
     mockVerifyToken('creator1');
-    prisma.room.findUnique.mockResolvedValue({ id: 'room1', name: 'Room 1', created_by: 'creator1' });
-    prisma.user.findUnique.mockResolvedValueOnce({ id: 'creator1', status: 'ACTIVE' }).mockResolvedValueOnce({ id: 'user2' });
+    mockPrisma.room.findUnique.mockResolvedValue({ id: 'room1', name: 'Room 1', created_by: 'creator1' });
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce({ id: 'creator1', status: 'ACTIVE' })
+      .mockResolvedValueOnce({ id: 'user2' });
     const uniqueError = new Error('Unique constraint failed');
     uniqueError.code = 'P2002';
-    prisma.roomMember.create.mockRejectedValue(uniqueError);
+    mockPrisma.roomMember.create.mockRejectedValue(uniqueError);
 
     const res = await request(app)
       .post('/api/chat/rooms/room1/members')

@@ -59,7 +59,7 @@ services:
     env_file: ./backend/.env # load env from backend since gateway needs same env vars
     environment:
       PORT: 8080
-      NGINX_URL: http://nginx:80
+      NGINX_URL: http://nginx:8081
       GATEWAY_SELF_URL: http://gateway:8080
     depends_on:
       - nginx
