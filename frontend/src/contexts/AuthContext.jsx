@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import api from '../api/axios';
+import { wsManager } from '../services/ws-manager.js';
 
 // Context object — sẽ được inject vào toàn bộ component tree bên dưới AuthProvider
 const AuthContext = createContext(null);
@@ -49,6 +50,7 @@ export function AuthProvider({ children }) {
   }, []); // [] → chỉ chạy 1 lần khi mount, không re-run khi re-render
 
   async function signOut() {
+    wsManager.disconnect();
     await firebaseSignOut(auth); // Firebase xóa token khỏi IndexedDB
     // setCurrentUser/setUserRoles không cần gọi ở đây vì onAuthStateChanged
     // sẽ tự được trigger với firebaseUser = null sau khi signOut

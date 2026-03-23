@@ -1,5 +1,5 @@
 services:
-  instance-1:
+  backend:
     build: ./backend
     env_file: ./backend/.env
     environment:
@@ -12,34 +12,8 @@ services:
     depends_on:
       - postgres
       - redis
-
-  instance-2:
-    build: ./backend
-    env_file: ./backend/.env
-    environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/homework_dev
-      REDIS_URL: redis://redis:6379
-      GATEWAY_URL: http://gateway:8080
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    depends_on:
-      - postgres
-      - redis
-
-  instance-3:
-    build: ./backend
-    env_file: ./backend/.env
-    environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/homework_dev
-      REDIS_URL: redis://redis:6379
-      GATEWAY_URL: http://gateway:8080
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    depends_on:
-      - postgres
-      - redis
+    deploy:
+      replicas: 3
 
   nginx:
     image: nginx:alpine
@@ -48,9 +22,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - instance-1
-      - instance-2
-      - instance-3
+      - backend
 
   gateway:
     build: ./gateway

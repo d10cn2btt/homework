@@ -704,7 +704,148 @@ export function getMessages(roomId, { before, since, limit } = {}) {
 
 ---
 
-## Phần 4 — Debug Checkpoints
+## Phần 4 — Refactor: Singleton WsManager
+
+### Vấn đề với thiết kế cũ
+
+`useWebSocket` tự quản lý toàn bộ WS lifecycle (tạo WS, reconnect, ping, state). Khi component unmount rồi mount lại (navigate), WS bị tạo lại từ đầu — tốn thêm 1 round-trip Firebase + WS handshake.
+
+### Thiết kế mới — Singleton pattern
+
+Tách WS lifecycle ra khỏi React component lifecycle:
+
+```
+ws-manager.js (module-level singleton)   ← quản lý WS, reconnect, ping, state
+useWebSocket.js (React hook)             ← chỉ subscribe events, không tạo WS
+```
+
+```
+App start
+  └─ useWebSocket() mount → wsManager.connect()
+       └─ if (this._ws) return  ← no-op nếu đã có connection (StrictMode safe)
+       └─ getIdToken() → new WebSocket() → register Redis
+
+Navigate đi (ChatPage unmount)
+  └─ cleanup → unsubscribe listeners  ← WS vẫn sống
+
+Navigate lại (ChatPage mount)
+  └─ wsManager.connect() → if (this._ws) return  ← reuse WS cũ, không tạo mới
+
+User logout
+  └─ wsManager.disconnect() → ws.close() → deregister Redis
+```
+
+### WsManager API
+
+```js
+wsManager.connect()      // tạo WS nếu chưa có, no-op nếu đã có
+wsManager.disconnect()   // đóng WS, reset state — gọi khi logout
+wsManager.send(roomId, content)
+wsManager.on(event, cb)  // subscribe, trả về unsubscribe fn
+wsManager.getStatus()    // đọc status hiện tại (dùng để init useState)
+```
+
+Events: `message` | `status` | `reconnected` | `wsError`
+
+### Guard tránh concurrent connect
+
+`connect()` là async (await getIdToken). Nếu gọi 2 lần liên tiếp trước khi resolve:
+
+```js
+if (this._ws || this._connecting) return;  // _connecting = true trước khi await
+this._connecting = true;
+const token = await getIdToken();
+// _connecting = false sau khi WS được tạo hoặc có lỗi
+```
+
+### So sánh trước / sau
+
+| | Trước (AbortController) | Sau (Singleton) |
+|---|---|---|
+| Ghost connection | Fix bằng signal.aborted | Không xảy ra (no-op) |
+| StrictMode | 2 Firebase calls | 1 Firebase call |
+| Navigate lại | Tạo WS mới | Reuse WS cũ |
+| Reconnect chain | Truyền signal qua params | Không cần — `this` là closure |
+| useWebSocket complexity | ~120 lines | ~30 lines |
+
+---
+
+## Phần 5 — Bug: Ghost WebSocket Connection
+
+### Mô tả
+
+Mỗi lần user vào màn Chat, Redis ghi **nhiều hơn 1 entry** cho cùng 1 user dù chỉ mở 1 tab. Các entry thừa (ghost connections) không tự bị xóa, tích tụ theo mỗi lần navigate.
+
+### Nguyên nhân gốc — Race condition trong `useWebSocket.js`
+
+`connect()` là async vì phải gọi `auth.currentUser.getIdToken()` để lấy Firebase token trước khi tạo WebSocket. Trong khoảng thời gian chờ đó, React StrictMode (dev) hoặc navigate nhanh (prod) có thể trigger cleanup — nhưng cleanup **miss** vì WS chưa được tạo:
+
+```
+useEffect mount  →  connect() gọi
+                      └─ await getIdToken()  ← đang chờ Firebase...
+
+useEffect cleanup  →  intentionalClose = true
+                   →  wsRef.current?.close()  ← wsRef vẫn null → không làm gì!
+
+getIdToken() resolve  →  new WebSocket() tạo ra   ← cleanup đã xong rồi
+                      →  wsRef.current = ws
+                      →  ws connect → register Redis  ← GHOST
+```
+
+**Tại sao `intentionalClose` không đủ:**
+`intentionalClose` chỉ được check bên trong `ws.onclose` — tức là chỉ có tác dụng sau khi WS đã đóng. WS ghost không bao giờ bị đóng nên `intentionalClose` không có tác dụng gì với nó.
+
+**Tại sao React StrictMode khuếch đại bug:**
+StrictMode trong dev cố tình mount → unmount → mount lại mỗi component để phát hiện cleanup không hoàn chỉnh. Điều này tạo ra 2 `connect()` chạy concurrent — cả 2 đều có race condition với cleanup.
+
+### Impact
+
+| Môi trường | Tần suất xảy ra | Hậu quả |
+|---|---|---|
+| Dev (StrictMode) | Mỗi lần vào màn Chat | 2 ghost connections, message nhận 2 lần (bị che bởi dedup) |
+| Prod (navigate nhanh) | Khi getIdToken() chậm > tốc độ navigate | 1 ghost connection tích tụ mỗi lần navigate |
+| Prod (bình thường) | Hiếm | Không ảnh hưởng |
+
+Ghost connections chỉ biến mất khi:
+- TTL 2 giờ tự expire trong Redis
+- Deliver nhận 404 `CONN_NOT_FOUND` → tự cleanup
+
+### Solution — AbortController
+
+Mỗi `useEffect` tạo 1 `AbortController` riêng. Cleanup gọi `controller.abort()` → set `signal.aborted = true`. Sau khi `getIdToken()` resolve, check signal trước khi tạo WS:
+
+```js
+// useEffect
+const controller = new AbortController();
+connect(controller.signal);
+return () => {
+  controller.abort();          // đánh dấu effect này đã bị cancel
+  intentionalClose.current = true;
+  wsRef.current?.close();
+};
+
+// connect()
+const token = await auth.currentUser?.getIdToken();
+if (signal.aborted) return;    // cleanup đã chạy → dừng, không tạo WS
+const ws = new WebSocket(...);
+```
+
+`signal` được truyền xuống toàn bộ reconnect chain (token expired, backoff) để đảm bảo mọi đường reconnect đều bị cancel khi effect đã cleanup.
+
+**Tại sao không dùng ref flag thay vì AbortController:**
+Ref là object dùng chung cho toàn bộ vòng đời hook. Khi mount #2 reset `cancelled.current = false`, nó vô hiệu hóa cleanup của mount #1 — ghost connection vẫn tạo ra. AbortController tạo object độc lập cho từng effect, `signal` của mount #1 và mount #2 không ảnh hưởng nhau.
+
+### Phân công sau khi fix
+
+| | `signal.aborted` | `intentionalClose` |
+|---|---|---|
+| Mục đích | Cancel trước khi WS được tạo | Ngăn reconnect sau khi WS đóng |
+| Check ở đâu | `connect()`, ngay sau `getIdToken()` | `ws.onclose` |
+| Scope | 1 effect instance | Toàn bộ hook |
+
+---
+
+## Phần 5 — Debug Checkpoints
 
 Khi message gửi nhưng không hiện trên UI, trace theo 6 checkpoint sau (theo thứ tự data flow):
 
